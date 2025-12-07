@@ -392,6 +392,11 @@ const u8 * get_ml_ie(const u8 *ies, size_t len, u8 type);
 const u8 * get_basic_mle_mld_addr(const u8 *buf, size_t len);
 const u8 * get_basic_mle_eml_capa(const u8 *buf, size_t len);
 int get_basic_mle_link_id(const u8 *buf, size_t len);
+u8 op_class_idx_to_chan(const struct oper_class_map *op, u8 idx);
+
+int op_class_chan_to_idx(const struct oper_class_map *op, u8 chan);
+
+int ieee80211_get_center_freq(int ctrl_freq, u32 bw);
 
 unsigned int get_max_nss_capability(struct ieee802_11_elems *elems,
 				    bool parse_for_rx);
