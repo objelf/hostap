@@ -211,8 +211,8 @@ static void wpas_nan_ndp_action_notif_cb(void *ctx,
 }
 
 
-static void wpas_nan_ndp_connected_cb(void *ctx,
-				      struct nan_ndp_connection_params *params)
+static int wpas_nan_ndp_connected_cb(void *ctx,
+				     struct nan_ndp_connection_params *params)
 {
 	struct wpa_supplicant *wpa_s = ctx;
 	char *ssi_hex = NULL;
@@ -220,7 +220,8 @@ static void wpas_nan_ndp_connected_cb(void *ctx,
 	if (params->ssi) {
 		ssi_hex = os_zalloc(2 * params->ssi_len + 1);
 		if (!ssi_hex)
-			return;
+			return -1;
+
 		wpa_snprintf_hex(ssi_hex, 2 * params->ssi_len + 1, params->ssi,
 				 params->ssi_len);
 	}
@@ -232,6 +233,8 @@ static void wpas_nan_ndp_connected_cb(void *ctx,
 		       MAC2STR(params->local_ndi), MAC2STR(params->peer_ndi),
 		       ssi_hex ? ssi_hex : "");
        os_free(ssi_hex);
+
+       return 0;
 }
 
 
