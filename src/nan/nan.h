@@ -453,4 +453,8 @@ int nan_handle_ndp_setup(struct nan_data *nan, struct nan_ndp_params *params);
 int nan_peer_get_device_capabilities(struct nan_data *nan, const u8 *addr,
 				     u8 map_id,
 				     struct nan_device_capabilities *capa);
+int nan_peer_get_tk(struct nan_data *nan, const u8 *addr,
+		    const u8 *peer_ndi, const u8 *local_ndi,
+		    u8 *tk, size_t *tk_len,
+		    enum nan_cipher_suite_id *csid);
 #endif /* NAN_H */
