@@ -7926,6 +7926,7 @@ static int wpa_supplicant_init_iface(struct wpa_supplicant *wpa_s,
 		wpa_s->p2p_mgmt = iface->p2p_mgmt;
 
 	wpa_s->nan_mgmt = iface->nan_mgmt;
+	wpa_s->nan_data = iface->nan_data;
 
 	if (wpa_s->num_multichan_concurrent == 0)
 		wpa_s->num_multichan_concurrent = 1;
