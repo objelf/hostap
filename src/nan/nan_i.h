@@ -561,4 +561,6 @@ int nan_sec_rx(struct nan_data *nan, struct nan_peer *peer,
 int nan_sec_add_attrs(struct nan_data *nan, struct nan_peer *peer,
 		      enum nan_subtype subtype, struct wpabuf *buf);
 int nan_sec_init_resp(struct nan_data *nan, struct nan_peer *peer);
+int nan_sec_pre_tx(struct nan_data *nan, struct nan_peer *peer,
+		   struct wpabuf *buf);
 #endif
