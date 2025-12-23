@@ -37,6 +37,20 @@
 #define NAN_MIN_RSSI_CLOSE  -60
 #define NAN_MIN_RSSI_MIDDLE -75
 
+#define DEFAULT_NAN_SUPP_PBM (NAN_PBA_METHOD_OPPORTUNISTIC |      \
+			      NAN_PBA_METHOD_PIN_DISPLAY |        \
+			      NAN_PBA_METHOD_PASSPHRASE_DISPLAY | \
+			      NAN_PBA_METHOD_QR_DISPLAY |         \
+			      NAN_PBA_METHOD_NFC_TAG |            \
+			      NAN_PBA_METHOD_PIN_KEYPAD |         \
+			      NAN_PBA_METHOD_PASSPHRASE_KEYPAD |  \
+			      NAN_PBA_METHOD_QR_SCAN |            \
+			      NAN_PBA_METHOD_NFC_READER)
+
+#define DEFAULT_NAN_AUTO_ACCEPT_PBM NAN_PBA_METHOD_OPPORTUNISTIC
+
+#define DEFAULT_NAN_BOOTSTRAP_COMEBACK_TIMEOUT 1024
+
 #ifdef CONFIG_NAN
 
 static int get_center(u8 channel, const u8 *center_channels, size_t num_chan,
@@ -743,11 +757,59 @@ static bool wpas_nan_is_valid_publish_id_cb(void *ctx, u8 instance_id,
 {
 	struct wpa_supplicant *wpa_s = ctx;
 
-	wpa_printf(MSG_DEBUG, "NAN: Check valid publish ID - instance_id=%u",
+	wpa_printf(MSG_DEBUG, "NAN: Check valid publish ID: instance_id=%u",
 		   instance_id);
 
 	return nan_de_is_valid_instance_id(wpa_s->nan_de, instance_id,
 					   true, service_id);
+}
+
+
+static void wpas_nan_bootstrap_request_cb(void *ctx, const u8 *peer_nmi,
+					  u16 pbm)
+{
+	struct wpa_supplicant *wpa_s = ctx;
+
+	wpas_notify_nan_bootstrap_request(wpa_s, peer_nmi, pbm);
+}
+
+
+static void wpas_nan_bootstrap_completed_cb(void *ctx, const u8 *peer_nmi,
+					    u16 pbm, bool success,
+					    u8 reason_code)
+{
+	struct wpa_supplicant *wpa_s = ctx;
+
+	if (success)
+		wpas_notify_nan_bootstrap_success(wpa_s, peer_nmi, pbm);
+	else
+		wpas_notify_nan_bootstrap_failure(wpa_s, peer_nmi, pbm,
+						  reason_code);
+}
+
+
+static int wpas_nan_transmit_followup_cb(void *ctx, const u8 *peer_nmi,
+					 const struct wpabuf *attrs, int handle,
+					 u8 req_instance_id)
+{
+	struct wpa_supplicant *wpa_s = ctx;
+
+	if (!wpa_s->nan_de)
+		return -1;
+
+	return nan_de_transmit(wpa_s->nan_de, handle, NULL, NULL,
+			       peer_nmi, req_instance_id, attrs);
+}
+
+
+static u16 wpas_nan_get_service_bootstrap_methods(void *ctx, int handle)
+{
+	struct wpa_supplicant *wpa_s = ctx;
+
+	if (!wpa_s->nan_de)
+		return 0;
+
+	return nan_de_get_service_bootstrap_methods(wpa_s->nan_de, handle);
 }
 
 
@@ -798,6 +860,15 @@ int wpas_nan_init(struct wpa_supplicant *wpa_s)
 	nan.dev_capa.n_antennas = wpa_s->nan_capa.num_antennas;
 	nan.dev_capa.channel_switch_time = wpa_s->nan_capa.max_channel_switch_time;
 	nan.dev_capa.capa = wpa_s->nan_capa.dev_capa;
+	nan.bootstrap_request = wpas_nan_bootstrap_request_cb;
+	nan.bootstrap_completed = wpas_nan_bootstrap_completed_cb;
+	nan.transmit_followup = wpas_nan_transmit_followup_cb;
+	nan.get_supported_bootstrap_methods =
+		wpas_nan_get_service_bootstrap_methods;
+
+	nan.supported_bootstrap_methods = DEFAULT_NAN_SUPP_PBM;
+	nan.auto_accept_bootstrap_methods = DEFAULT_NAN_AUTO_ACCEPT_PBM;
+	nan.bootstrap_comeback_timeout = DEFAULT_NAN_BOOTSTRAP_COMEBACK_TIMEOUT;
 
 	wpa_s->nan = nan_init(&nan);
 	if (!wpa_s->nan) {
@@ -988,6 +1059,22 @@ int wpas_nan_set(struct wpa_supplicant *wpa_s, char *cmd)
 		}
 
 		return 0;
+	}
+
+	if (os_strcmp("bootstrap_config", cmd) == 0) {
+		u16 supported_methods, auto_accept_methods, comeback_timeout;
+
+		if (sscanf(param, "%hx,%hx,%hu", &supported_methods,
+			   &auto_accept_methods, &comeback_timeout) != 3) {
+			wpa_printf(MSG_DEBUG,
+				   "NAN: Invalid value for boostrap_config");
+			return -1;
+		}
+
+		return nan_set_bootstrap_configuration(wpa_s->nan,
+						       supported_methods,
+						       auto_accept_methods,
+						       comeback_timeout);
 	}
 
 #undef NAN_PARSE_INT
