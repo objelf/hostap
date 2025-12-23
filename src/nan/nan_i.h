@@ -270,6 +270,31 @@ struct nan_elem_container_entry {
 };
 
 /*
+ * struct nan_peer_sec_info_entry - NAN peer security information entry
+ *
+ * Maintains the latest security information for an NDI pair.
+ *
+ * @list: used for linking in the peer security info list.
+ * @peer_ndi: Peer NDI address.
+ * @local_ndi: Local NDI address.
+ * @csid: Cipher Suite ID used for the secure NAN communication
+ * @pmk: PMK shared with the peer
+ * @pmkid: PMKID shared with the peer
+ * @ptk: PTK shared with the peer
+ */
+struct nan_peer_sec_info_entry {
+	struct dl_list list;
+
+	u8 peer_ndi[ETH_ALEN];
+	u8 local_ndi[ETH_ALEN];
+
+	enum nan_cipher_suite_id csid;
+	u8 pmk[PMK_LEN];
+	u8 pmkid[PMKID_LEN];
+	struct nan_ptk ptk;
+};
+
+/*
  * struct nan_peer_info - NAN peer information
  *
  * @last_seen: Timestamp of the last update of the peer info.
@@ -277,6 +302,7 @@ struct nan_elem_container_entry {
  * @avail_entries: List of availability entries of the peer.
  * @dev_capa: List of device capabilities of the peer.
  * @element_container: List of element container entries of the peer.
+ * @sec: List of security information entries of the peer.
  */
 struct nan_peer_info {
 	struct os_reltime last_seen;
@@ -284,6 +310,7 @@ struct nan_peer_info {
 	struct dl_list avail_entries;
 	struct dl_list dev_capa;
 	struct dl_list element_container;
+	struct dl_list sec;
 };
 
 /**
@@ -563,4 +590,7 @@ int nan_sec_add_attrs(struct nan_data *nan, struct nan_peer *peer,
 int nan_sec_init_resp(struct nan_data *nan, struct nan_peer *peer);
 int nan_sec_pre_tx(struct nan_data *nan, struct nan_peer *peer,
 		   struct wpabuf *buf);
+bool nan_sec_ndp_store_keys(struct nan_data *nan, struct nan_peer *peer,
+			    const u8 *peer_ndi, const u8 *local_ndi);
+
 #endif
