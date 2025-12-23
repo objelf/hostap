@@ -1272,14 +1272,70 @@ static int wpas_nan_set_ndp_schedule(struct wpa_supplicant *wpa_s,
 }
 
 
+static int wpas_nan_fill_nd_pmk(struct wpa_supplicant *wpa_s,
+				struct nan_ndp_params *ndp,
+				int handle,
+				const u8 *publisher_nmi,
+				const char *pwd)
+{
+	u8 service_id[NAN_SERVICE_ID_LEN];
+
+	if (ndp->sec.csid < NAN_CS_NONE || ndp->sec.csid >= NAN_CS_MAX) {
+		wpa_printf(MSG_DEBUG,
+			   "NAN: Invalid CSID value: %d",
+			   ndp->sec.csid);
+		return -1;
+	}
+
+	if (ndp->sec.csid == NAN_CS_NONE)
+		return 0;
+
+	/* Security parameters are not needed in confirmation */
+	if (ndp->type == NAN_NDP_ACTION_CONF)
+		return 0;
+
+	if (!(wpa_s->nan_supported_csids & BIT(ndp->sec.csid))) {
+			wpa_printf(MSG_DEBUG,
+				   "NAN: Requested CSID %d not supported",
+				   ndp->sec.csid);
+			return -1;
+	}
+
+	if (!pwd || os_strlen(pwd) == 0) {
+		wpa_printf(MSG_DEBUG,
+			   "NAN: Password required for CSID %d",
+			   ndp->sec.csid);
+		return -1;
+	}
+
+	/*
+	 * Get service ID from the local handle (subscribe on
+	 * requester and publish on responder)
+	 */
+	if (!nan_de_is_valid_instance_id(wpa_s->nan_de,
+					handle,
+					ndp->type == NAN_NDP_ACTION_RESP,
+					service_id)) {
+		wpa_printf(MSG_DEBUG,
+			   "NAN: Invalid service instance handle: %d",
+			   handle);
+		return -1;
+	}
+
+	return nan_crypto_derive_nd_pmk(pwd, service_id, ndp->sec.csid,
+					publisher_nmi, ndp->sec.pmk);
+}
+
+
 /* Command format NAN_NDP_REQUEST handle=<id> ndi=<ifname> peer_nmi=<nmi>
-   peer_id=<peer_instance_id> ssi=<hexdata> qos=<slots:latency> */
+   peer_id=<peer_instance_id> ssi=<hexdata> qos=<slots:latency>
+   [csid = <cipher_suite> password=<string>] */
 int wpas_nan_ndp_request(struct wpa_supplicant *wpa_s, char *cmd)
 {
 	struct nan_ndp_params ndp;
 	struct wpabuf *ssi_buf = NULL;
 	char *token, *context = NULL;
-	char *pos;
+	char *pos, *pwd = NULL;
 	int handle = -1;
 	int ret = -1;
 
@@ -1367,7 +1423,10 @@ int wpas_nan_ndp_request(struct wpa_supplicant *wpa_s, char *cmd)
 					   pos);
 				goto fail;
 			}
-
+		} else if (os_strcmp(token, "csid") == 0) {
+			ndp.sec.csid = atoi(pos);
+		} else if (os_strcmp(token, "password") == 0) {
+			pwd = pos;
 		} else {
 			wpa_printf(MSG_DEBUG, "NAN: Unknown parameter: %s",
 				   token);
@@ -1400,6 +1459,14 @@ int wpas_nan_ndp_request(struct wpa_supplicant *wpa_s, char *cmd)
 		goto fail;
 	}
 
+	/* Derive NDP PMK if needed */
+	if (wpas_nan_fill_nd_pmk(wpa_s, &ndp, handle,
+				 ndp.ndp_id.peer_nmi, pwd) < 0) {
+		wpa_printf(MSG_DEBUG,
+			   "NAN: Failed to derive NDP PMK");
+		goto fail;
+	}
+
 	if (wpas_nan_set_ndp_schedule(wpa_s, &ndp)) {
 		wpa_printf(MSG_DEBUG,
 			   "NAN: Failed to set NDP schedule");
@@ -1421,13 +1488,15 @@ fail:
 /* Command format NAN_NDP_RESPONSE accept|reject peer_nmi=<nmi>
    [reason_code=<reject_reason>]
    [ndi=<ifname> handle=<service_handle> init_ndi=<ndi>
-   ndp_id=<id> [ssi=<hexdata>] [qos=<slots:latency>]] */
+   ndp_id=<id> [ssi=<hexdata>] [qos=<slots:latency>]
+   [csid=<csid> password=<string>]] */
 int wpas_nan_ndp_response(struct wpa_supplicant *wpa_s, char *cmd)
 {
 	struct nan_ndp_params ndp;
 	struct wpabuf *ssi_buf = NULL;
 	char *token, *context = NULL;
-	char *pos;
+	char *pos, *pwd = NULL;
+	int handle = -1;
 	int ret = -1;
 
 	os_memset(&ndp, 0, sizeof(ndp));
@@ -1526,6 +1595,12 @@ int wpas_nan_ndp_response(struct wpa_supplicant *wpa_s, char *cmd)
 					   pos);
 				goto fail;
 			}
+		} else if (os_strcmp(token, "handle") == 0) {
+			handle = atoi(pos);
+		} else if (os_strcmp(token, "csid") == 0) {
+			ndp.sec.csid = atoi(pos);
+		} else if (os_strcmp(token, "password") == 0) {
+			pwd = pos;
 		} else {
 			wpa_printf(MSG_DEBUG, "NAN: Unknown parameter: %s",
 				   token);
@@ -1534,9 +1609,33 @@ int wpas_nan_ndp_response(struct wpa_supplicant *wpa_s, char *cmd)
 
 	/* Validate required parameters for accept case */
 	if (ndp.u.resp.status == NAN_NDP_STATUS_ACCEPTED) {
+		u8 *publisher_nmi;
+
 		if (is_zero_ether_addr(ndp.u.resp.resp_ndi)) {
 			wpa_printf(MSG_DEBUG,
 				   "NAN: Missing required parameter for accept: ndi");
+			goto fail;
+		}
+
+		/* If we initiated the NDP setup, we are the subscriber */
+		if (ether_addr_equal(ndp.u.resp.resp_ndi,
+				     ndp.ndp_id.init_ndi)) {
+			ndp.type = NAN_NDP_ACTION_CONF;
+			publisher_nmi = ndp.ndp_id.peer_nmi;
+		} else {
+			publisher_nmi = wpa_s->own_addr;
+		}
+
+		if (handle < 1) {
+			wpa_printf(MSG_DEBUG,
+				   "NAN: Missing required parameter for accept: handle");
+			goto fail;
+		}
+
+		/* Fill the ND-PMK if needed */
+		if (wpas_nan_fill_nd_pmk(wpa_s, &ndp, handle,
+					 publisher_nmi, pwd)) {
+			wpa_printf(MSG_DEBUG, "NAN: Failed to derive NDP PMK");
 			goto fail;
 		}
 	}
@@ -1570,10 +1669,6 @@ int wpas_nan_ndp_response(struct wpa_supplicant *wpa_s, char *cmd)
 			   "NAN: Failed to set NDP schedule");
 		goto fail;
 	}
-
-	/* If we initiated the NDP setup, this must be the confirmation */
-	if (ether_addr_equal(ndp.u.resp.resp_ndi, ndp.ndp_id.init_ndi))
-		ndp.type = NAN_NDP_ACTION_CONF;
 
 	ret = nan_handle_ndp_setup(wpa_s->nan, &ndp);
 	if (ret < 0)
