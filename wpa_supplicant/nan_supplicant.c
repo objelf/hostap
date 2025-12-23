@@ -1918,6 +1918,20 @@ int * wpas_nan_usd_all_freqs(struct wpa_supplicant *wpa_s)
 	return freqs;
 }
 
+void wpas_nan_tx_status(struct wpa_supplicant *wpa_s,
+			const u8 *data, size_t data_len, u8 acked)
+{
+	const struct ieee80211_mgmt *mgmt = (void *)data;
+
+	if (!wpas_nan_ready(wpa_s))
+		return;
+
+	wpa_printf(MSG_DEBUG, "NAN: TX status for frame len=%zu acked=%u",
+		   data_len, acked);
+
+	if (!nan_tx_status(wpa_s->nan, mgmt->da, data, data_len, acked))
+		wpa_printf(MSG_DEBUG, "NAN: Processed NAF tx status");
+}
 
 void wpas_nan_usd_state_change_notif(struct wpa_supplicant *wpa_s)
 {
