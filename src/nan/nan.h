@@ -274,6 +274,29 @@ struct nan_ndp_action_notif_params {
 	size_t ssi_len;
 };
 
+/**
+ * struct nan_channel_info - Channel information for NAN channel selection
+ * @op_class: Operating class
+ * @channel: Control channel index
+ * @pref: Channel Preference (higher is preferred). Valid values are 0-3.
+ */
+struct nan_channel_info {
+	u8 op_class;
+	u8 channel;
+	u8 pref;
+};
+
+/**
+ * struct nan_channels - Array of channel information entries
+ *
+ * @n_chans: Number of channel information entries
+ * @chans: Array of channel information. Sorted by preference.
+ */
+struct nan_channels {
+	size_t n_chans;
+	struct nan_channel_info *chans;
+};
+
 struct nan_config {
 	void *cb_ctx;
 
@@ -337,6 +360,30 @@ struct nan_config {
 	void (*ndp_disconnected)(void *ctx, struct nan_ndp_id *ndp_id,
 				 const u8 *local_ndi, const u8 *peer_ndi,
 				 enum nan_reason reason);
+
+	/**
+	 * get_chans - Get the prioritized allowed channel information to be
+	 * used for building the potential availability entries associated with
+	 * the given map id.
+	 *
+	 * @ctx: Callback context from cb_ctx
+	 * @map_id: Map ID of the availability attribute for which
+	 *     the channels are requested.
+	 * @chans: Pointer to a nan_channels structure that should be filled
+	 *     with the prioritized frequencies. On successful return the
+	 *     channels should be sorted having the higher priority channels
+	 *     first.
+	 * Returns 0 on success, -1 on failure.
+	 *
+	 * Note: the callback is responsible for allocating chans->chans as
+	 * needed. The caller (the NAN module) is responsible for freeing the
+	 * memory allocated for the chans->chans.
+	 *
+	 * Note: The callback should add all channels that are considered valid
+	 * for use by the NAN module for the given map.
+	 */
+	int (*get_chans)(void *ctx, u8 map_id, struct nan_channels *chans);
+
 };
 
 struct nan_data * nan_init(const struct nan_config *cfg);
