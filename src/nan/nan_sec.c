@@ -588,3 +588,382 @@ int nan_sec_rx(struct nan_data *nan, struct nan_peer *peer,
 
 	return 0;
 }
+
+
+/*
+ * nan_sec_add_m1_attrs - Add security attributes to NAN message 1
+ *
+ * @nan: NAN module context from nan_init()
+ * @peer: Peer which is the recipient of the message
+ * @buf: Buffer to which the attribute should be added
+ * Returns: 0 on success, negative on failure
+ *
+ * In addition to building the attributes, the function also initializes the
+ * security context for the NDP security exchange. Assumes that the following
+ * are already set:
+ * - initiator CSID
+ * - PMK
+ * - NDP puslish ID
+ * - initiator address
+ * - peer_nmi
+ */
+static int nan_sec_add_m1_attrs(struct nan_data *nan, struct nan_peer *peer,
+				struct wpabuf *buf)
+{
+	struct nan_ndp_sec *ndp_sec = &peer->ndp_setup.sec;
+	struct wpa_eapol_key *key;
+	u16 info;
+	u8 key_len = sizeof(struct wpa_eapol_key) + 2;
+	int ret;
+
+	if (ndp_sec->i_csid == NAN_CS_SK_CCM_128)
+		key_len += NAN_KEY_MIC_LEN;
+	else if (ndp_sec->i_csid == NAN_CS_SK_GCM_256)
+		key_len += NAN_KEY_MIC_24_LEN;
+	else
+		return -1;
+
+	/* Initialize the initiator security state */
+	os_get_random(ndp_sec->i_nonce, sizeof(ndp_sec->i_nonce));
+	ndp_sec->i_capab = 0;
+	ndp_sec->i_instance_id = peer->ndp_setup.publish_inst_id;
+
+	/* Compute the PMKID */
+	ret = nan_crypto_calc_pmkid(ndp_sec->pmk,
+				    nan->cfg->nmi_addr,
+				    peer->nmi_addr,
+				    peer->ndp_setup.service_id,
+				    ndp_sec->i_csid, ndp_sec->i_pmkid);
+	if (ret) {
+		wpa_printf(MSG_DEBUG, "NAN: SEC: Failed to compute PMKID (m1)");
+		return ret;
+	}
+
+	/* Cipher suite information */
+	wpabuf_put_u8(buf, NAN_ATTR_CSIA);
+	wpabuf_put_le16(buf, sizeof(struct nan_cipher_suite_info) +
+			sizeof(struct nan_cipher_suite));
+	wpabuf_put_u8(buf, ndp_sec->i_capab);
+	wpabuf_put_u8(buf, ndp_sec->i_csid);
+	wpabuf_put_u8(buf, ndp_sec->i_instance_id);
+
+	/* Security context information */
+	wpabuf_put_u8(buf, NAN_ATTR_SCIA);
+	wpabuf_put_le16(buf, sizeof(struct nan_sec_ctxt) + PMKID_LEN);
+
+	wpabuf_put_le16(buf, PMKID_LEN);
+	wpabuf_put_u8(buf, NAN_SEC_CTX_TYPE_PMKID);
+	wpabuf_put_u8(buf, ndp_sec->i_instance_id);
+	wpabuf_put_data(buf, ndp_sec->i_pmkid, PMKID_LEN);
+
+	/* Shared key descriptor */
+	wpabuf_put_u8(buf, NAN_ATTR_SHARED_KEY_DESCR);
+	wpabuf_put_le16(buf, sizeof(struct nan_shared_key) + key_len);
+	wpabuf_put_u8(buf, ndp_sec->i_instance_id);
+
+	key = (struct wpa_eapol_key *)wpabuf_put(buf, key_len);
+	os_memset(key, 0, key_len);
+
+	key->type = NAN_KEY_DESC;
+	info = WPA_KEY_INFO_TYPE_AKM_DEFINED | WPA_KEY_INFO_KEY_TYPE |
+		WPA_KEY_INFO_ACK;
+	WPA_PUT_BE16(key->key_info, info);
+
+	/* Copy the initiator nonce */
+	os_memcpy(key->key_nonce, ndp_sec->i_nonce, WPA_NONCE_LEN);
+
+	/* Key length is zero (it can be deduced from the cipher suite) */
+
+	/* Initialize replay counter */
+	WPA_PUT_BE64(ndp_sec->replaycnt, 1ULL);
+	os_memcpy(key->replay_counter, ndp_sec->replaycnt,
+		  sizeof(key->replay_counter));
+	ndp_sec->replaycnt_ok = 1;
+
+	ndp_sec->valid = 1;
+	return 0;
+}
+
+
+/*
+ * nan_sec_add_m2_attrs - Add security attributes to NAN message 2
+ *
+ * @nan: NAN module context from nan_init()
+ * @peer: Peer which is the recipient of the message
+ * @buf: Buffer to which the attribute should be added
+ * Returns: 0 on success, negative on failure
+ */
+static int nan_sec_add_m2_attrs(struct nan_data *nan, struct nan_peer *peer,
+				struct wpabuf *buf)
+{
+	struct nan_ndp_sec *ndp_sec = &peer->ndp_setup.sec;
+	struct wpa_eapol_key *key;
+	u16 info;
+	u8 key_len;
+
+	key_len = sizeof(struct wpa_eapol_key) + 2;
+	if (ndp_sec->i_csid == NAN_CS_SK_CCM_128)
+		key_len += NAN_KEY_MIC_LEN;
+	else if (ndp_sec->i_csid == NAN_CS_SK_GCM_256)
+		key_len += NAN_KEY_MIC_24_LEN;
+	else
+		return -1;
+
+	/* Cipher suite information */
+	wpabuf_put_u8(buf, NAN_ATTR_CSIA);
+	wpabuf_put_le16(buf, sizeof(struct nan_cipher_suite_info) +
+			sizeof(struct nan_cipher_suite));
+	wpabuf_put_u8(buf, ndp_sec->r_capab);
+	wpabuf_put_u8(buf, ndp_sec->r_csid);
+	wpabuf_put_u8(buf, ndp_sec->r_instance_id);
+
+	/* Security context information */
+	wpabuf_put_u8(buf, NAN_ATTR_SCIA);
+	wpabuf_put_le16(buf, sizeof(struct nan_sec_ctxt) + PMKID_LEN);
+
+	wpabuf_put_le16(buf, PMKID_LEN);
+	wpabuf_put_u8(buf, NAN_SEC_CTX_TYPE_PMKID);
+	wpabuf_put_u8(buf, ndp_sec->r_instance_id);
+	wpabuf_put_data(buf, ndp_sec->r_pmkid, PMKID_LEN);
+
+	if (peer->ndp_setup.status == NAN_NDP_STATUS_REJECTED)
+		return 0;
+
+	/* Shared key descriptor */
+	wpabuf_put_u8(buf, NAN_ATTR_SHARED_KEY_DESCR);
+	wpabuf_put_le16(buf, sizeof(struct nan_shared_key) + key_len);
+	wpabuf_put_u8(buf, ndp_sec->r_instance_id);
+
+	key = (struct wpa_eapol_key *)wpabuf_put(buf, key_len);
+	os_memset(key, 0, key_len);
+
+	key->type = NAN_KEY_DESC;
+	info = WPA_KEY_INFO_TYPE_AKM_DEFINED | WPA_KEY_INFO_KEY_TYPE |
+		WPA_KEY_INFO_MIC;
+	WPA_PUT_BE16(key->key_info, info);
+
+	/* copy the responders's nonce */
+	os_memcpy(key->key_nonce, ndp_sec->r_nonce, WPA_NONCE_LEN);
+
+	/*
+	 * Key length is zero (it can be deduced from the cipher suite).
+	 * No additional data is added.
+	 */
+
+	/* Copy replay counter */
+	os_memcpy(key->replay_counter, ndp_sec->replaycnt,
+		  sizeof(key->replay_counter));
+	ndp_sec->replaycnt_ok = 1;
+
+	return 0;
+}
+
+
+/*
+ * nan_sec_add_m3_attrs - Add security attributes to NAN message 3
+ *
+ * @nan: NAN module context from nan_init()
+ * @peer: Peer which is the recipient of the message
+ * @buf: Buffer to which the attribute should be added
+ * Returns: 0 on success, negative on failure
+ */
+static int nan_sec_add_m3_attrs(struct nan_data *nan, struct nan_peer *peer,
+				struct wpabuf *buf)
+{
+	struct nan_ndp_sec *ndp_sec = &peer->ndp_setup.sec;
+	struct wpa_eapol_key *key;
+	u16 info;
+	u8 key_len = sizeof(struct wpa_eapol_key) + 2;
+
+	if (ndp_sec->i_csid == NAN_CS_SK_CCM_128)
+		key_len += NAN_KEY_MIC_LEN;
+	else if (ndp_sec->i_csid == NAN_CS_SK_GCM_256)
+		key_len += NAN_KEY_MIC_24_LEN;
+	else
+		return -1;
+
+	/* Shared key descriptor */
+	wpabuf_put_u8(buf, NAN_ATTR_SHARED_KEY_DESCR);
+	wpabuf_put_le16(buf, sizeof(struct nan_shared_key) + key_len);
+	wpabuf_put_u8(buf, ndp_sec->i_instance_id);
+
+	key = (struct wpa_eapol_key *)wpabuf_put(buf, key_len);
+	os_memset(key, 0, key_len);
+
+	key->type = NAN_KEY_DESC;
+
+	info = WPA_KEY_INFO_TYPE_AKM_DEFINED | WPA_KEY_INFO_KEY_TYPE |
+		WPA_KEY_INFO_MIC | WPA_KEY_INFO_ACK |
+		WPA_KEY_INFO_INSTALL | WPA_KEY_INFO_SECURE;
+
+	WPA_PUT_BE16(key->key_info, info);
+
+	/* Copy the initiators nonce */
+	os_memcpy(key->key_nonce, ndp_sec->i_nonce, WPA_NONCE_LEN);
+
+	/*
+	 * Key length is zero (it can be deduced from the cipher suite).
+	 * No additional data is added.
+	 *
+	 * Copy replay counter. It was already incremented while processing m2
+	 * so no need to increment it again
+	 */
+	os_memcpy(key->replay_counter, ndp_sec->replaycnt,
+		  sizeof(key->replay_counter));
+	return 0;
+}
+
+
+/*
+ * nan_sec_add_m4_attrs - Add security attributes to NAN message 4
+ *
+ * @nan: NAN module context from nan_init()
+ * @peer: Peer which is the recipient of the message
+ * @buf: Buffer to which the attribute should be added
+ * Returns: 0 on success, negative on failure
+ */
+static int nan_sec_add_m4_attrs(struct nan_data *nan, struct nan_peer *peer,
+				struct wpabuf *buf)
+{
+	struct nan_ndp_sec *ndp_sec = &peer->ndp_setup.sec;
+	struct wpa_eapol_key *key;
+	u16 info;
+	u8 key_len = sizeof(struct wpa_eapol_key) + 2;
+
+	if (ndp_sec->i_csid == NAN_CS_SK_CCM_128)
+		key_len += NAN_KEY_MIC_LEN;
+	else if (ndp_sec->i_csid == NAN_CS_SK_GCM_256)
+		key_len += NAN_KEY_MIC_24_LEN;
+	else
+		return -1;
+
+	/* Shared key descriptor */
+	wpabuf_put_u8(buf, NAN_ATTR_SHARED_KEY_DESCR);
+	wpabuf_put_le16(buf, sizeof(struct nan_shared_key) + key_len);
+	wpabuf_put_u8(buf, ndp_sec->r_instance_id);
+
+	key = (struct wpa_eapol_key *)wpabuf_put(buf, key_len);
+	os_memset(key, 0, key_len);
+
+	key->type = NAN_KEY_DESC;
+	info = WPA_KEY_INFO_TYPE_AKM_DEFINED | WPA_KEY_INFO_KEY_TYPE |
+		WPA_KEY_INFO_MIC | WPA_KEY_INFO_SECURE |
+		WPA_KEY_INFO_INSTALL;
+
+	WPA_PUT_BE16(key->key_info, info);
+
+	os_memcpy(key->key_nonce, ndp_sec->r_nonce, WPA_NONCE_LEN);
+
+	os_memcpy(key->replay_counter, ndp_sec->replaycnt,
+		  sizeof(key->replay_counter));
+	return 0;
+}
+
+
+/*
+ * nan_sec_add_attrs - Add security attributes to NAN message
+ *
+ * @nan: NAN module context from nan_init()
+ * @peer: Peer which is the recipient of the message
+ * @subtype: Frame subtype
+ * @buf: Buffer to which the attribute should be added
+ * Returns: 0 on success, negative on failure
+ */
+int nan_sec_add_attrs(struct nan_data *nan, struct nan_peer *peer,
+		      enum nan_subtype subtype, struct wpabuf *buf)
+{
+	/* NDP establishment is not in progress */
+	if (!peer->ndp_setup.ndp)
+		return 0;
+
+	wpa_printf(MSG_DEBUG, "NAN: SEC: Add security attributes");
+	nan_sec_dump(nan, peer);
+
+	/* No security configuration */
+	if (peer->ndp_setup.sec.i_csid != NAN_CS_SK_CCM_128 &&
+	    peer->ndp_setup.sec.i_csid != NAN_CS_SK_GCM_256)
+		return 0;
+
+	switch (subtype) {
+	case NAN_SUBTYPE_DATA_PATH_REQUEST:
+		return nan_sec_add_m1_attrs(nan, peer, buf);
+	case NAN_SUBTYPE_DATA_PATH_RESPONSE:
+		return nan_sec_add_m2_attrs(nan, peer, buf);
+	case NAN_SUBTYPE_DATA_PATH_CONFIRM:
+		return nan_sec_add_m3_attrs(nan, peer, buf);
+	case NAN_SUBTYPE_DATA_PATH_KEY_INSTALL:
+		return nan_sec_add_m4_attrs(nan, peer, buf);
+	case NAN_SUBTYPE_DATA_PATH_TERMINATION:
+		break;
+	default:
+		return -1;
+	}
+
+	return 0;
+}
+
+
+/**
+ * nan_sec_init_resp - Initialize security context for responder
+ *
+ * @nan: NAN module context from nan_init()
+ * @peer: Peer with whom the NDP is being established
+ * Returns: 0 on success, negative on failure
+ *
+ * The function initializes the security context for the NDP security
+ * exchange for the responder. Assumes that the following re already set:
+ * - Initiator CSID
+ * - Responder CSID
+ * - PMK
+ * - NDP publish ID
+ * - Initiator address
+ * - Responder address
+ */
+int nan_sec_init_resp(struct nan_data *nan, struct nan_peer *peer)
+{
+	struct nan_ndp_sec *ndp_sec = &peer->ndp_setup.sec;
+	struct nan_ndp *ndp = peer->ndp_setup.ndp;
+	int ret;
+
+	if (ndp_sec->i_csid != ndp_sec->r_csid)
+		return -1;
+
+	/* Initialize the responder's security state */
+	os_get_random(ndp_sec->r_nonce, sizeof(ndp_sec->r_nonce));
+	ndp_sec->r_capab = 0;
+	ndp_sec->r_instance_id = peer->ndp_setup.publish_inst_id;
+
+	if (ndp_sec->i_instance_id != ndp_sec->r_instance_id) {
+		wpa_printf(MSG_DEBUG,
+			   "NAN: SEC: Service instance IDs are different (m2)");
+		return -1;
+	}
+
+	/* Compute the PMKID */
+	ret = nan_crypto_calc_pmkid(ndp_sec->pmk, peer->nmi_addr,
+				    nan->cfg->nmi_addr,
+				    peer->ndp_setup.service_id,
+				    ndp_sec->r_csid, ndp_sec->r_pmkid);
+	if (ret) {
+		wpa_printf(MSG_DEBUG, "NAN: SEC: Failed to compute PMKID (m2)");
+		return -1;
+	}
+
+	/* Sanity check */
+	if (os_memcmp(ndp_sec->i_pmkid, ndp_sec->r_pmkid, PMKID_LEN) != 0) {
+		wpa_printf(MSG_DEBUG,
+			   "NAN: SEC: m2: local PMKID differs from remote");
+		return -1;
+	}
+
+	/* PTK should be derived using the NDI address */
+	ret = nan_crypto_pmk_to_ptk(ndp_sec->pmk,
+				    ndp->init_ndi, ndp->resp_ndi,
+				    ndp_sec->i_nonce, ndp_sec->r_nonce,
+				    &ndp_sec->ptk, ndp_sec->i_csid);
+
+	wpa_printf(MSG_DEBUG, "NAN: SEC: derived PTK for responder (m2). ret=%d",
+		   ret);
+
+	return ret;
+}

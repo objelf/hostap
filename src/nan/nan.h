@@ -302,6 +302,7 @@ struct nan_channels {
 
 struct nan_config {
 	void *cb_ctx;
+	u8 nmi_addr[ETH_ALEN];
 
 	struct nan_device_capabilities dev_capa;
 

@@ -558,4 +558,7 @@ int nan_crypto_key_mic(const u8 *buf, size_t len, const u8 *kck,
 void nan_sec_reset(struct nan_data *nan, struct nan_ndp_sec *ndp_sec);
 int nan_sec_rx(struct nan_data *nan, struct nan_peer *peer,
 	       struct nan_msg *msg);
+int nan_sec_add_attrs(struct nan_data *nan, struct nan_peer *peer,
+		      enum nan_subtype subtype, struct wpabuf *buf);
+int nan_sec_init_resp(struct nan_data *nan, struct nan_peer *peer);
 #endif
