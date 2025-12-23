@@ -90,4 +90,5 @@ int nan_parse_naf(struct nan_data *nan, const struct ieee80211_mgmt *mgmt,
 		  size_t len, struct nan_msg *msg);
 void nan_attrs_clear(struct nan_data *nan, struct nan_attrs *attrs);
 
+void nan_add_dev_capa_attr(struct nan_data *nan, struct wpabuf *buf);
 #endif /* NAN_I_H */
