@@ -1670,9 +1670,17 @@ struct wpa_supplicant {
 	bool nan_mgmt;
 
 #ifdef CONFIG_NAN
+#define MAX_NAN_RADIOS 2
 	u32 nan_drv_flags;
+	u8 nan_num_radios;
+	u8 nan_max_channels_per_radio;
+	u8 nan_sched_slot_duration;
+	u16 nan_schedule_period;
+
 	struct nan_data *nan;
 	struct nan_cluster_config nan_config;
+	u8 schedule_sequence_id;
+	struct nan_schedule_config nan_sched[MAX_NAN_RADIOS];
 #endif /* CONFIG_NAN */
 };
 
