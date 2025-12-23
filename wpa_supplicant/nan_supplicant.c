@@ -2066,3 +2066,13 @@ void wpas_nan_usd_state_change_notif(struct wpa_supplicant *wpa_s)
 			nan_de_config(ifs->nan_de, &cfg);
 	}
 }
+
+
+void wpas_nan_rx_naf(struct wpa_supplicant *wpa_s,
+		     const struct ieee80211_mgmt *mgmt, size_t len)
+{
+	if (!wpas_nan_ready(wpa_s))
+		return;
+
+	nan_action_rx(wpa_s->nan, mgmt, len);
+}
