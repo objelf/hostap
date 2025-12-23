@@ -432,4 +432,10 @@ int nan_add_avail_attrs(struct nan_data *nan, u8 sequence_id,
 			u8 type_for_conditional,
 			size_t n_chans, struct nan_chan_schedule *chans,
 			struct wpabuf *buf);
-#endif /* NAN_I_H */
+void nan_del_avail_entry(struct nan_avail_entry *entry);
+void nan_flush_avail_entries(struct dl_list *avail_entries);
+int nan_sched_entries_to_avail_entries(struct nan_data *nan,
+				       struct dl_list *avail_entries,
+				       u8 *sched_entries,
+				       u16 sched_entries_len);
+#endif
