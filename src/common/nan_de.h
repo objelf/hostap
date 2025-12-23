@@ -132,6 +132,12 @@ struct nan_publish_params {
 
 	/* RSSI range limit */
 	bool close_proximity;
+
+	/*
+	 * Pairing Bootstrapping Methods as defined in Table 128 in Wi-Fi
+	 * Aware specification v4.0
+	 */
+	u16 pbm;
 };
 
 /* Returns -1 on failure or >0 publish_id */
@@ -193,6 +199,12 @@ struct nan_subscribe_params {
 
 	/* RSSI range limit */
 	bool close_proximity;
+
+	/*
+	 * Pairing Bootstrapping Methods as defined in Table 128 in Wi-Fi
+	 * Aware specification v4.0
+	 */
+	u16 pbm;
 };
 
 /* Returns -1 on failure or >0 subscribe_id */
