@@ -393,6 +393,10 @@ struct nan_config {
 
 	struct nan_device_capabilities dev_capa;
 
+	/* See Table 141 (Capability Info Field) */
+	u8 dev_capa_ext_reg_info;
+	u8 dev_capa_ext_pairing_npk_caching;
+
 	/**
 	 * start - Start NAN
 	 * @ctx: Callback context from cb_ctx
