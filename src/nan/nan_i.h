@@ -403,6 +403,7 @@ struct nan_ndl {
  * struct nan_peer - Represents a known NAN peer
  * @list: List node for linking peers.
  * @nmi_addr: NAN MAC address of the peer.
+ * @configured: Indicates if the peer has been configured to the device.
  * @last_seen: Timestamp of the last time this peer was seen.
  * @info: Information about the peer.
  * @ndps: List of NDPs associated with this peer.
@@ -413,6 +414,7 @@ struct nan_ndl {
 struct nan_peer {
 	struct dl_list list;
 	u8 nmi_addr[ETH_ALEN];
+	bool configured;
 	struct os_reltime last_seen;
 	struct nan_peer_info info;
 

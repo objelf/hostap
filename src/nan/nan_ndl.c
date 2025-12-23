@@ -118,6 +118,13 @@ static void nan_ndl_clear(struct nan_data *nan, struct nan_peer *peer)
 		   MAC2STR(peer->nmi_addr),
 		   nan_ndl_state_str(peer->ndl->state), peer->ndl->state);
 
+	if (peer->configured) {
+		nan->cfg->set_peer_schedule(nan->cfg->cb_ctx, peer->nmi_addr,
+					    false, 0, 0, 0, NULL,
+					    NULL);
+		peer->configured = false;
+	}
+
 	os_free(ndl->ndc_sched);
 	ndl->ndc_sched = NULL;
 	ndl->ndc_sched_len = 0;
