@@ -456,4 +456,69 @@ struct ieee80211_nan_qos {
 #define NAN_QOS_MIN_SLOTS_NO_PREF   0
 #define NAN_QOS_MAX_LATENCY_NO_PREF 0xffff
 
+/* See Table 121 (Cipher Suite attribute field format) */
+enum nan_cipher_suite_id {
+	NAN_CS_NONE         = 0,
+	NAN_CS_SK_CCM_128   = 1,
+	NAN_CS_SK_GCM_256   = 2,
+	NAN_CS_PK_2WDH_128  = 3,
+	NAN_CS_PK_2WDH_256  = 4,
+	NAN_CS_GTK_CCMP_128 = 5,
+	NAN_CS_GTK_GCMP_256 = 6,
+	NAN_CS_PK_PASN_128  = 7,
+	NAN_CS_PK_PASN_256  = 8,
+};
+
+/* See Table 121 (Cipher Suite attribute field format) */
+struct nan_cipher_suite {
+	u8 csid;
+	u8 instance_id;
+} STRUCT_PACKED;
+
+/* See Table 122 (Cipher Suite Information attribute field format) */
+#define NAN_CS_INFO_CAPA_16_ND_TKSA_REPLAY_COUNTERS BIT(0)
+#define NAN_CS_INFO_CAPA_GTK_SUPP_POS               1
+#define NAN_CS_INFO_CAPA_GTK_SUPP_MASK              (BIT(1) | BIT(2))
+#define NAN_CS_INFO_CAPA_GTK_SUPP_NONE              0
+#define NAN_CS_INFO_CAPA_GTK_SUPP_NO_BIGTK          1
+#define NAN_CS_INFO_CAPA_GTK_SUPP_ALL               2
+#define NAN_CS_INFO_CAPA_16_REPLAY_COUNTERS         BIT(3)
+#define NAN_CS_INFO_CAPA_IGTK_USE_NCS_BIP_256       BIT(4)
+
+/* See Table 122 (Cipher Suite Information attribute field format). Id and
+ * length not included
+ */
+struct nan_cipher_suite_info {
+	u8 capab;
+	u8 cs[0];
+} STRUCT_PACKED;
+
+/* See Table 123 (Security Context Identifier field format) */
+enum nan_sec_ctx_type {
+	NAN_SEC_CTX_TYPE_INVALID = 0,
+	NAN_SEC_CTX_TYPE_PMKID = 1,
+};
+
+/* See Table 123 (Security Context Identifier field format) */
+struct nan_sec_ctxt {
+	le16 len;
+	u8 scid;
+	u8 instance_id;
+	u8 ctxt[0];
+} STRUCT_PACKED;
+
+/* Only key descriptor type 2 is supported */
+#define NAN_KEY_DESC 2
+
+/* See Table 125 (NAN Shared Key Descriptor attribute field format) */
+struct nan_shared_key {
+	u8 publish_id;
+
+	/*
+	 * The format of the key is as defined in the IEEE80211 specification,
+	 * starting with the 'descriptor type' field. See struct wpa_eapol_key.
+	 */
+	u8 key[0];
+} STRUCT_PACKED;
+
 #endif /* NAN_DEFS_H */
