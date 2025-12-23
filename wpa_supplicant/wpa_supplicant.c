@@ -7987,11 +7987,8 @@ static int wpa_supplicant_init_iface(struct wpa_supplicant *wpa_s,
 		return -1;
 
 #ifdef CONFIG_NAN
-	wpa_s->nan_drv_flags = capa.nan_flags;
-	wpa_s->nan_num_radios = capa.nan_num_radios;
-	wpa_s->nan_sched_slot_duration = capa.nan_slot_duration;
-	wpa_s->nan_schedule_period = capa.nan_schedule_period;
-	wpa_s->nan_max_channels_per_radio = capa.nan_sched_chans;
+	os_memcpy(&wpa_s->nan_capa, &capa.nan_capa,
+		  sizeof(wpa_s->nan_capa));
 #endif /* CONFIG_NAN */
 
 	if (wpa_supplicant_init_eapol(wpa_s) < 0)

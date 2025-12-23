@@ -414,8 +414,8 @@ int wpas_nan_init(struct wpa_supplicant *wpa_s)
 	struct nan_config nan;
 
 	if (!(wpa_s->drv_flags2 & WPA_DRIVER_FLAGS2_SUPPORT_NAN) ||
-	    !(wpa_s->nan_drv_flags & WPA_DRIVER_FLAGS_NAN_SUPPORT_SYNC_CONFIG))
-	{
+	    !(wpa_s->nan_capa.drv_flags &
+	      WPA_DRIVER_FLAGS_NAN_SUPPORT_SYNC_CONFIG)) {
 		wpa_printf(MSG_INFO, "NAN: Driver does not support NAN");
 		return -1;
 	}
@@ -447,14 +447,14 @@ int wpas_nan_init(struct wpa_supplicant *wpa_s)
 		((1 << NAN_CDW_INFO_5G_POS) & NAN_CDW_INFO_5G_MASK);
 
 	nan.dev_capa.supported_bands = NAN_DEV_CAPA_SBAND_2G;
-	if (wpa_s->nan_drv_flags &
+	if (wpa_s->nan_capa.drv_flags &
 	    WPA_DRIVER_FLAGS_NAN_SUPPORT_DUAL_BAND)
 		nan.dev_capa.supported_bands |= NAN_DEV_CAPA_SBAND_5G;
 
-	/* TODO: set based on driver capabilities */
-	nan.dev_capa.op_mode = NAN_DEV_CAPA_OP_MODE_PHY_MODE_VHT |
-		NAN_DEV_CAPA_OP_MODE_PHY_MODE_HE |
-		NAN_DEV_CAPA_OP_MODE_HE_VHT_160;
+	nan.dev_capa.op_mode = wpa_s->nan_capa.op_modes;
+	nan.dev_capa.n_antennas = wpa_s->nan_capa.num_antennas;
+	nan.dev_capa.channel_switch_time = wpa_s->nan_capa.max_channel_switch_time;
+	nan.dev_capa.capa = wpa_s->nan_capa.dev_capa;
 
 	wpa_s->nan = nan_init(&nan);
 	if (!wpa_s->nan) {
@@ -489,8 +489,7 @@ int wpas_nan_init(struct wpa_supplicant *wpa_s)
 	 * needed, i.e., when the DE is configured with unsolicited publish or
 	 * active subscribe
 	 */
-	wpa_s->nan_config.enable_dw_notif =
-		!!(wpa_s->nan_drv_flags &
+	wpa_s->nan_config.enable_dw_notif = !!(wpa_s->nan_capa.drv_flags &
 		   WPA_DRIVER_FLAGS_NAN_SUPPORT_USERSPACE_DE);
 
 	/* Currently support shared key suites only */
@@ -797,22 +796,22 @@ int wpas_nan_sched_config_map(struct wpa_supplicant *wpa_s, const char *cmd)
 		return -1;
 	}
 
-	if (map_id > wpa_s->nan_num_radios) {
+	if (map_id > wpa_s->nan_capa.num_radios) {
 		wpa_printf(MSG_DEBUG,
 			   "NAN: map_id %d exceeds number of supported NAN radios %d",
-			   map_id, wpa_s->nan_num_radios);
+			   map_id, wpa_s->nan_capa.num_radios);
 		return -1;
 	}
 
-	if (!wpa_s->nan_schedule_period ||
-	    !wpa_s->nan_sched_slot_duration) {
+	if (!wpa_s->nan_capa.schedule_period ||
+	    !wpa_s->nan_capa.slot_duration) {
 		    wpa_printf(MSG_DEBUG,
 			       "NAN: Driver doesn't advertise support for NAN scheduling");
 		    return -1;
 	}
 
-	expected_bitmap_len =(wpa_s->nan_schedule_period /
-			      wpa_s->nan_sched_slot_duration + 7) / 8;
+	expected_bitmap_len =(wpa_s->nan_capa.schedule_period /
+			      wpa_s->nan_capa.slot_duration + 7) / 8;
 
 	os_memset(&sched_cfg, 0, sizeof(sched_cfg));
 
@@ -840,8 +839,8 @@ int wpas_nan_sched_config_map(struct wpa_supplicant *wpa_s, const char *cmd)
 	unused_freqs_count = wpa_s->num_multichan_concurrent -
 		shared_freqs_count;
 
-	bf_total = bitfield_alloc(wpa_s->nan_schedule_period /
-				  wpa_s->nan_sched_slot_duration);
+	bf_total = bitfield_alloc(wpa_s->nan_capa.schedule_period /
+				  wpa_s->nan_capa.slot_duration);
 	if (!bf_total) {
 		wpa_printf(MSG_DEBUG,
 			  "NAN: Failed to allocate bitfield for total schedule");
@@ -855,10 +854,10 @@ int wpas_nan_sched_config_map(struct wpa_supplicant *wpa_s, const char *cmd)
 		struct bitfield *bf_chan = NULL;
 		char *colon = os_strchr(token, ':');
 
-		if (i >= wpa_s->nan_max_channels_per_radio) {
+		if (i >= wpa_s->nan_capa.sched_chans) {
 			wpa_printf(MSG_DEBUG,
 				   "NAN: Exceeded max channels per radio %u",
-				   wpa_s->nan_max_channels_per_radio);
+				   wpa_s->nan_capa.sched_chans);
 			goto out;
 		}
 
@@ -920,8 +919,8 @@ int wpas_nan_sched_config_map(struct wpa_supplicant *wpa_s, const char *cmd)
 			wpa_printf(MSG_DEBUG,
 				   "NAN: Invalid bitmap length (%zu) for period=%d, slot length=%d",
 				   wpabuf_len(sched_cfg.channels[i].time_bitmap),
-				   wpa_s->nan_schedule_period,
-				   wpa_s->nan_sched_slot_duration);
+				   wpa_s->nan_capa.schedule_period,
+				   wpa_s->nan_capa.slot_duration);
 			goto out;
 		}
 
@@ -1088,9 +1087,9 @@ static void wpas_nan_fill_ndp_schedule(struct wpa_supplicant *wpa_s,
 				sched_cfg->channels[i].bandwidth;
 
 			chan_sched->committed.duration =
-				wpa_s->nan_sched_slot_duration >> 5;
+				wpa_s->nan_capa.slot_duration >> 5;
 			chan_sched->committed.period =
-				ffs(wpa_s->nan_schedule_period) - 7;
+				ffs(wpa_s->nan_capa.schedule_period) - 7;
 			chan_sched->committed.offset = 0;
 			chan_sched->committed.len = bitmap_len;
 			os_memcpy(chan_sched->committed.bitmap, bitmap_data,
@@ -1105,7 +1104,7 @@ static void wpas_nan_fill_ndp_schedule(struct wpa_supplicant *wpa_s,
 		}
 	}
 	/* Mark all supported radios - for potential availability */
-	sched->map_ids_bitmap = (BIT(wpa_s->nan_num_radios) - 1) << 1;
+	sched->map_ids_bitmap = (BIT(wpa_s->nan_capa.num_radios) - 1) << 1;
 }
 
 
@@ -1211,8 +1210,8 @@ static int wpas_nan_select_ndc(struct wpa_supplicant *wpa_s,
 	    ndp->sched.chans[0].chan.freq == 5220) {
 		int dw_bit, byte_idx, bit_in_byte;
 
-		dw_bit = 128 / wpa_s->nan_sched_slot_duration;
-		dw_bit += !!(wpa_s->nan_sched_slot_duration == 16);
+		dw_bit = 128 / wpa_s->nan_capa.slot_duration;
+		dw_bit += !!(wpa_s->nan_capa.slot_duration == 16);
 		byte_idx = dw_bit / 8;
 		bit_in_byte = dw_bit % 8;
 
@@ -1222,7 +1221,7 @@ static int wpas_nan_select_ndc(struct wpa_supplicant *wpa_s,
 			return 0;
 		}
 	} else if (ndp->sched.chans[0].chan.freq == 2437 &&
-		   (wpa_s->nan_sched_slot_duration == 16)) {
+		   (wpa_s->nan_capa.slot_duration == 16)) {
 		if (ndp->sched.chans[0].committed.bitmap[0] & 0x02) {
 			ndp->sched.ndc.bitmap[0] = 0x02;
 			return 0;
@@ -2309,7 +2308,7 @@ int wpas_nan_publish(struct wpa_supplicant *wpa_s, const char *service_name,
 
 #ifdef CONFIG_NAN
 	if (params->sync) {
-		if (!(wpa_s->nan_drv_flags &
+		if (!(wpa_s->nan_capa.drv_flags &
 		      WPA_DRIVER_FLAGS_NAN_SUPPORT_USERSPACE_DE)) {
 			wpa_printf(MSG_INFO,
 				   "NAN: Cannot advertise sync service, driver does not support user space DE");
@@ -2455,7 +2454,7 @@ int wpas_nan_subscribe(struct wpa_supplicant *wpa_s,
 
 #ifdef CONFIG_NAN
 	if (params->sync) {
-		if (!(wpa_s->nan_drv_flags &
+		if (!(wpa_s->nan_capa.drv_flags &
 		      WPA_DRIVER_FLAGS_NAN_SUPPORT_USERSPACE_DE)) {
 			wpa_printf(MSG_INFO,
 				   "NAN: Cannot subscribe sync, user space DE is not supported");
