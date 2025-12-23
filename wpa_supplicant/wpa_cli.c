@@ -3420,7 +3420,6 @@ static int wpa_cli_cmd_nan_update_conf(struct wpa_ctrl *ctrl, int argc,
 	return wpa_cli_cmd(ctrl, "NAN_UPDATE_CONF", 0, argc, argv);
 }
 
-
 static int wpa_cli_cmd_nan_sched_config_map(struct wpa_ctrl *ctrl, int argc,
 					     char *argv[])
 {
@@ -3453,6 +3452,18 @@ static int wpa_cli_cmd_nan_peer_info(struct wpa_ctrl *ctrl, int argc,
 				     char *argv[])
 {
 	return wpa_cli_cmd(ctrl, "NAN_PEER_INFO", 2, argc, argv);
+}
+
+static int wpa_cli_cmd_nan_bootstrap(struct wpa_ctrl *ctrl, int argc,
+				     char *argv[])
+{
+	return wpa_cli_cmd(ctrl, "NAN_BOOTSTRAP", 4, argc, argv);
+}
+
+static int wpa_cli_cmd_nan_bootstrap_reset(struct wpa_ctrl *ctrl,
+					   int argc, char *argv[])
+{
+	return wpa_cli_cmd(ctrl, "NAN_BOOTSTRAP_RESET", 1, argc, argv);
 }
 
 #endif /* CONFIG_NAN */
@@ -4256,6 +4267,12 @@ static const struct wpa_cli_cmd wpa_cli_commands[] = {
 	  cli_cmd_flag_none, "peer_nmi=<nmi> init_ndi=<ndi> ndp_id=<id> = Terminate NAN data path" },
 	{ "nan_peer_info", wpa_cli_cmd_nan_peer_info, NULL,
 	  cli_cmd_flag_none, "<addr> <schedule|potential|capa> [map_id] = Get NAN peer information" },
+	{ "nan_bootstrap", wpa_cli_cmd_nan_bootstrap, NULL,
+	  cli_cmd_flag_none,
+	  " = <peer_mac> <handle=<service handle>> <req_instance_id=<peer requestor id>> <method=<Bootstrap method>> [auth] = Request or authorize NAN boostrapping with peer" },
+	{ "nan_bootstrap_reset", wpa_cli_cmd_nan_bootstrap_reset, NULL,
+	  cli_cmd_flag_none,
+	  " = <peer_mac> = Reset NAN boostrapping with peer" },
 #endif /* CONFIG_NAN */
 	{ "new_random_mac_address", wpa_cli_cmd_generate_new_mac, NULL,
 	  cli_cmd_flag_none, "= Generate new random MAC address" },
