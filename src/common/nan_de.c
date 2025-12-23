@@ -78,6 +78,10 @@ struct nan_de_service {
 	u8 srf_bf_idx;
 	struct wpabuf *srf;
 	bool close_proximity;
+
+	/* Bootstrapping methods */
+	u16 pbm;
+
 };
 
 #define NAN_DE_N_MIN 5
@@ -263,6 +267,25 @@ static int nan_de_tx(struct nan_de *de, unsigned int freq,
 }
 
 
+static void nan_buf_add_npba(struct nan_de *de, struct nan_de_service *srv,
+			     struct wpabuf *buf)
+{
+	u8 type_and_status = NAN_PBA_TYPE_ADVERTISE |
+		(NAN_PBA_STATUS_ACCEPTED << NAN_PBA_STATUS_POS);
+
+	wpa_printf(MSG_DEBUG, "NAN: Add NPBA");
+
+	wpabuf_put_u8(buf, NAN_ATTR_BPBA);
+	wpabuf_put_le16(buf, 5);
+
+	/* Dialog token is 0 for advertise */
+	wpabuf_put_u8(buf, 0);
+	wpabuf_put_u8(buf, type_and_status);
+	wpabuf_put_u8(buf, NAN_REASON_RESERVED);
+	wpabuf_put_le16(buf, srv->pbm);
+}
+
+
 static void nan_de_tx_sdf(struct nan_de *de, struct nan_de_service *srv,
 			  unsigned int wait_time,
 			  enum nan_service_control_type type,
@@ -302,6 +325,10 @@ static void nan_de_tx_sdf(struct nan_de *de, struct nan_de_service *srv,
 	/* Element Container attribute */
 	if (srv->elems)
 		len += NAN_ATTR_HDR_LEN + 1 + wpabuf_len(srv->elems);
+
+	/* NPBA attribute (dialog token, type and status, reason, pbm */
+	if (srv->pbm && type != NAN_SRV_CTRL_FOLLOW_UP)
+		len += NAN_ATTR_HDR_LEN + 1 + 1 + 1 + 2;
 
 	/* Reserve some additional space for extra attributes */
 	if (de->cb.add_extra_attrs)
@@ -370,6 +397,9 @@ static void nan_de_tx_sdf(struct nan_de *de, struct nan_de_service *srv,
 		wpabuf_put_u8(buf, 0); /* Map ID */
 		wpabuf_put_buf(buf, srv->elems);
 	}
+
+	if (srv->pbm && type != NAN_SRV_CTRL_FOLLOW_UP)
+		nan_buf_add_npba(de, srv, buf);
 
 	if (de->cb.add_extra_attrs)
 		de->cb.add_extra_attrs(de->cb.ctx, buf);
@@ -1751,6 +1781,8 @@ int nan_de_publish(struct nan_de *de, const char *service_name,
 	srv->is_p2p = p2p;
 	srv->is_pr = params->proximity_ranging && params->solicited;
 	srv->close_proximity = params->close_proximity;
+	srv->pbm = params->pbm;
+
 	nan_de_add_srv(de, srv);
 	nan_de_run_timer(de);
 	return publish_id;
@@ -2016,6 +2048,7 @@ int nan_de_subscribe(struct nan_de *de, const char *service_name,
 	srv->is_pr = params->proximity_ranging && params->active;
 	srv->sync = params->sync;
 	srv->close_proximity = params->close_proximity;
+	srv->pbm = params->pbm;
 
 	nan_de_add_srv(de, srv);
 	nan_de_run_timer(de);
