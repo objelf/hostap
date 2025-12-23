@@ -1001,6 +1001,57 @@ int nan_add_peer(struct nan_data *nan, const u8 *addr,
 }
 
 
+static void nan_action_build_header(struct nan_data *nan, struct wpabuf *buf,
+				    enum nan_subtype subtype)
+{
+	/* TODO: need to also support protected dual */
+	wpabuf_put_u8(buf, WLAN_ACTION_PUBLIC);
+	wpabuf_put_u8(buf, WLAN_PA_VENDOR_SPECIFIC);
+	wpabuf_put_be24(buf, OUI_WFA);
+	wpabuf_put_u8(buf, NAN_TYPE_NAF);
+	wpabuf_put_u8(buf, subtype);
+}
+
+
+static int nan_action_build(struct nan_data *nan, struct nan_peer *peer,
+			    enum nan_subtype subtype, struct wpabuf *buf)
+{
+	int ret;
+
+	wpa_printf(MSG_DEBUG, "NAN: Build NAF");
+
+	nan_action_build_header(nan, buf, subtype);
+
+	nan_add_dev_capa_attr(nan, buf);
+
+	ret = nan_ndp_add_ndp_attr(nan, peer, buf);
+	if (ret)
+		return ret;
+
+	ret = nan_ndl_add_avail_attrs(nan, peer, buf);
+	if (ret)
+		return ret;
+
+	ret = nan_ndl_add_ndc_attr(nan, peer, buf);
+	if (ret)
+		return ret;
+
+	ret = nan_ndl_add_ndl_attr(nan, peer, buf);
+	if (ret)
+		return ret;
+
+	ret = nan_ndl_add_qos_attr(nan, peer, buf);
+	if (ret)
+		return ret;
+
+	nan_ndl_add_elem_container_attr(nan, peer, buf);
+
+	wpa_printf(MSG_DEBUG, "NAN: build NAF: done");
+
+	return 0;
+}
+
+
 /*
  * nan_publish_instance_id_valid - Check is instance ID is a valid publish ID
  *
