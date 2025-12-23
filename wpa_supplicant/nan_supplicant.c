@@ -968,6 +968,10 @@ int wpas_nan_sched_config_map(struct wpa_supplicant *wpa_s, const char *cmd)
 			goto out;
 		}
 
+		/* Extract RX NSS from upper nibble of num_antennas */
+		sched_cfg.channels[i].rx_nss =
+			(wpa_s->nan_capa.num_antennas >> 4) & 0x0f;
+
 		bitfield_union_in_place(bf_total, bf_chan);
 		bitfield_free(bf_chan);
 	}
