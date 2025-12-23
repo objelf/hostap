@@ -259,6 +259,8 @@ struct nan_ndp_params {
  * @local_ndi: local NDI MAC address
  * @ssi: service specific information
  * @ssi_len: service specific information length
+ * @install_keys: whether the new keys should be installed
+ * @first_ndp: whether this is the first NDP with the peer
  */
 struct nan_ndp_connection_params {
 	struct nan_ndp_id ndp_id;
@@ -266,6 +268,8 @@ struct nan_ndp_connection_params {
 	const u8 *local_ndi;
 	const u8 *ssi;
 	size_t ssi_len;
+	bool install_keys;
+	bool first_ndp;
 };
 
 /*
