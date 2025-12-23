@@ -449,4 +449,8 @@ int nan_action_rx(struct nan_data *nan, const struct ieee80211_mgmt *mgmt,
 int nan_tx_status(struct nan_data *nan, const u8 *dst, const u8 *data,
 		  size_t data_len, u8 acked);
 int nan_handle_ndp_setup(struct nan_data *nan, struct nan_ndp_params *params);
+
+int nan_peer_get_device_capabilities(struct nan_data *nan, const u8 *addr,
+				     u8 map_id,
+				     struct nan_device_capabilities *capa);
 #endif /* NAN_H */

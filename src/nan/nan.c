@@ -1671,3 +1671,29 @@ void nan_ndp_terminated(struct nan_data *nan, struct nan_peer *peer,
 	if (dl_list_empty(&peer->ndps) && !peer->ndp_setup.ndp)
 		nan_ndl_reset(nan, peer);
 }
+
+
+int nan_peer_get_device_capabilities(struct nan_data *nan, const u8 *addr,
+				     u8 map_id,
+				     struct nan_device_capabilities *capa)
+{
+	struct nan_dev_capa_entry *cur, *next;
+	struct nan_peer *peer;
+
+	if (!nan || !capa)
+		return -1;
+
+	peer = nan_get_peer(nan, addr);
+	if (!peer)
+		return -1;
+
+	dl_list_for_each_safe(cur, next, &peer->info.dev_capa,
+			      struct nan_dev_capa_entry, list) {
+		if (cur->map_id == map_id) {
+			*capa = cur->capa;
+			return 0;
+		}
+	}
+
+	return  -1;
+}
