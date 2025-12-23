@@ -571,7 +571,7 @@ int nan_ndl_naf_sent(struct nan_data *nan, struct nan_peer *peer,
 int nan_ndl_add_avail_attrs(struct nan_data *nan,
 			    const struct nan_peer *peer,
 			    struct wpabuf *buf);
-int nan_get_chan_bm(struct nan_data *nan, struct nan_sched_chan *chan,
+int nan_get_chan_bm(struct nan_data *nan, const struct nan_sched_chan *chan,
 		    u8 *op_class, u16 *chan_bm, u16 *pri_chan_bm);
 int nan_add_avail_attrs(struct nan_data *nan, u8 sequence_id,
 			u32 map_ids_bitmap,
