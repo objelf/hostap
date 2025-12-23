@@ -2724,7 +2724,9 @@ static int nl80211_register_action_frame(struct i802_bss *bss,
 }
 
 
-#define NAN_PUB_ACTION ((const u8 *) "\x04\x09\x50\x6f\x9a\x13")
+#define NAN_SDF_ACTION ((u8 *) "\x04\x09\x50\x6f\x9a\x13")
+#define NAN_NAF_ACTION ((u8 *) "\x04\x09\x50\x6f\x9a\x18")
+
 
 static int nl80211_mgmt_subscribe_nan(struct i802_bss *bss)
 {
@@ -2746,9 +2748,18 @@ static int nl80211_mgmt_subscribe_nan(struct i802_bss *bss)
 		   bss->nl_mgmt);
 
 	/* NAN SDF Public Action */
-	if (nl80211_register_action_frame2(bss, NAN_PUB_ACTION, 6, true)) {
+	if (nl80211_register_action_frame2(bss, NAN_SDF_ACTION, 6, true)) {
+		wpa_printf(MSG_DEBUG,
+			   "nl80211: Failed to subscribe to NAN SDFs");
+		nl_destroy_handles(&bss->nl_mgmt);
+		return -1;
+	}
+
+	/* NAF Public Action */
+	if (nl80211_register_action_frame2(bss, NAN_NAF_ACTION, 6, true)) {
+
 		wpa_printf(MSG_INFO,
-			   "nl80211: Failed to subscribe to NAN public action frames");
+			   "nl80211: Failed to subscribe to NAFs");
 		nl_destroy_handles(&bss->nl_mgmt);
 		return -1;
 	}
@@ -2834,9 +2845,9 @@ static int nl80211_mgmt_subscribe_non_ap(struct i802_bss *bss)
 #endif /* CONFIG_P2P */
 #ifdef CONFIG_NAN_USD
 	/* NAN SDF Public Action */
-	if (nl80211_register_action_frame2(bss, NAN_PUB_ACTION, 6, true) < 0) {
+	if (nl80211_register_action_frame2(bss, NAN_SDF_ACTION, 6, true) < 0) {
 		/* fallback to non-multicast */
-		if (nl80211_register_action_frame2(bss, NAN_PUB_ACTION, 6,
+		if (nl80211_register_action_frame2(bss, NAN_SDF_ACTION, 6,
 						   false) < 0)
 			ret = -1;
 	}
