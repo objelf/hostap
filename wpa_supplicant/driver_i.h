@@ -1304,6 +1304,30 @@ wpa_drv_nan_update_config(struct wpa_supplicant *wpa_s,
 	return wpa_s->driver->nan_change_config(wpa_s->drv_priv, conf);
 }
 
+static inline int wpa_drv_nan_config_schedule(struct wpa_supplicant *wpa_s,
+					      u8 map_id,
+					      struct nan_schedule_config *conf)
+{
+	if (!wpa_s->driver->nan_config_schedule)
+		return -1;
+	return wpa_s->driver->nan_config_schedule(wpa_s->drv_priv, map_id,
+						  conf);
+}
+
+static inline int
+wpa_drv_nan_config_peer_schedule(struct wpa_supplicant *wpa_s, const u8 *peer,
+				 u16 cdw, u8 sequence_id,
+				 u16 max_chan_switch_time,
+				 const struct wpabuf *ulw,
+				 struct nan_peer_schedule_config *sched)
+{
+	if (!wpa_s->driver->nan_config_peer_schedule)
+		return -1;
+	return wpa_s->driver->nan_config_peer_schedule(wpa_s->drv_priv, peer,
+						       cdw, sequence_id,
+						       max_chan_switch_time,
+						       ulw, sched);
+}
 #endif /* CONFIG_NAN */
 
 #endif /* DRIVER_I_H */

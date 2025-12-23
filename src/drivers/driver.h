@@ -2583,7 +2583,32 @@ struct wpa_driver_capa {
 #define WPA_DRIVER_FLAGS_NAN_SUPPORT_SYNC_CONFIG	0x00000002
 /* Driver supports DW notifications and SDF TX/RX over NAN device interface */
 #define WPA_DRIVER_FLAGS_NAN_SUPPORT_USERSPACE_DE	0x00000004
+/** Driver supports NAN Data path */
+#define WPA_DRIVER_FLAGS_NAN_SUPPORT_NDP		0x00000008
 	u32 nan_flags;
+
+	/* Maximum number of NAN radios */
+	u8 nan_num_radios;
+
+	/* Maximum number of channels in NAN schedule (per map) */
+	u8 nan_sched_chans;
+
+	/*
+	 * For the following NAN schedule capabilities, even if the
+	 * driver/device supports multiple options, only a single option
+	 * should be selected. For example, if both 16 TU and 32 TU slot
+	 * durations are supported, the driver should report the shortest
+	 * supported slot duration (16 TU). For schedule period,
+	 * the driver should report the maximum supported period, as shorter
+	 * periods can always be represented by repetitions of the shorter
+	 * schedule bitmap. In any case 512/16 configuration is recommended for
+	 * better interoperability.
+	 */
+
+	/* NAN schedule bitmap slot duration (16, 32, 64 or 128) in TUs */
+	u8 nan_slot_duration;
+	/* Schedule period (powers of 2 in range: 128 - 8192) in TUs */
+	u16 nan_schedule_period;
 #endif /* CONFIG_NAN */
 };
 
@@ -2692,6 +2717,15 @@ struct hostapd_sta_add_params {
 	s8 mld_link_id;
 	const u8 *mld_link_addr;
 	u16 eml_cap;
+
+#ifdef CONFIG_NAN
+	/*
+	 * For a station added to a NAN Data Interface (NDI) indicate the
+	 * address of the NAN Management Interface (NMI) to which this station
+	 * belongs
+	 */
+	const u8 *nmi_addr;
+#endif /* CONFIG_NAN */
 };
 
 struct mac_address {
@@ -3260,6 +3294,77 @@ struct nan_cluster_config {
 	size_t extra_nan_attrs_len;
 	const u8 *vendor_elems;
 	size_t vendor_elems_len;
+};
+
+/**
+ * Even if the device supports more channels, 4 channels should be enough
+ * for any practical purpose
+ */
+#define MAX_NUM_NAN_SCHEDULE_CHANNELS 4
+
+#define MAX_NUM_NAN_MAPS 2
+
+/**
+ * struct nan_schedule_config - NAN schedule configuration
+ *
+ * @num_channels: Number of channels in the schedule
+ * @channels: Channel specific schedule information
+ */
+struct nan_schedule_config {
+	u8 num_channels;
+
+	/**
+	 * channels - Channel specific schedule information
+	 *
+	 * @freq: Frequency in MHz
+	 * @center_freq1: Center frequency 1 in MHz
+	 * @center_freq2: Center frequency 2 in MHz
+	 * @bandwidth: Channel bandwidth
+	 * @time_bitmap: Bitmap indicating the committed availability
+	 *     on the channel.
+	 * @rx_nss: Number of spatial streams supported for RX on the
+	 *     channel
+	 * @chan_entry: Channel Entry as defined in Wi-Fi
+	 *     Aware (TM) 4.0 specification Table 100 (Channel Entry
+	 *     format for the NAN Availability attribute).
+	 *
+	 * Note: Time bitmap slot duration and schedule length equal to the
+	 * reported NAN capabilities (see &nan_slot_duration and
+	 * &nan_schedule_length in &struct wpa_driver_capa).
+	 */
+	struct nan_schedule_channel {
+		int freq;
+		int center_freq1;
+		int center_freq2;
+		int bandwidth;
+		struct wpabuf *time_bitmap;
+		u8 rx_nss;
+
+		u8 chan_entry[6];
+
+	} channels[MAX_NUM_NAN_SCHEDULE_CHANNELS];
+};
+
+/**
+ * struct nan_peer_schedule_config - NAN peer schedule configuration
+ *
+ * @n_maps: Number of maps in the schedule
+ * @maps: Map specific schedule information
+ */
+struct nan_peer_schedule_config {
+	u8 n_maps;
+
+	/**
+	 * maps - Map specific schedule information
+	 *
+	 * @map_id: Map ID
+	 * @sched: NAN schedule configuration for the map
+	 */
+	struct nan_schedule_map {
+		u8 map_id;
+		struct nan_schedule_config sched;
+	} maps[MAX_NUM_NAN_MAPS];
+
 };
 
 /**
@@ -5636,6 +5741,49 @@ struct wpa_driver_ops {
 	 * @priv: Private driver interface data
 	 */
 	void (*nan_stop)(void *priv);
+
+	/**
+	 * nan_config_schedule - Configure NAN schedule
+	 * @priv: Private driver interface data
+	 * @map_id: NAN schedule map ID
+	 * @conf: NAN schedule configuration parameters
+	 * Returns 0 on success, -1 on failure
+	 *
+	 * This command configures the local NAN schedule. It should be
+	 * executed on NAN device interface after NAN has been started.
+	 * The configured schedule should be valid for RX for all NAN
+	 * activities (management and data).
+	 * For devices that support multiple concurrent NAN radios, this
+	 * callback should be called for each radio with the corresponding
+	 * %map_id.
+	 * If previous configuration exists, it is replaced with the new
+	 * one. To delete previous schedule, set %conf.num_channels = 0.
+	 */
+	int (*nan_config_schedule)(void *priv, u8 map_id,
+				   struct nan_schedule_config *conf);
+
+	/**
+	 * nan_config_peer_schedule - configure NAN peer schedule
+	 * @priv: Private driver interface data
+	 * @peer: Peer's NAN device address
+	 * @cdw: Peer's committed DW.
+	 * @sequence_id: Peer's schedule sequence ID
+	 * @max_chan_switch_time: Maximum channel switch time in TUs
+	 * @ulw: Peer's unaligned window attributes or %NULL
+	 * @sched: NAN peer schedule configuration parameters
+	 * Returns 0 on success, -1 on failure
+	 *
+	 * This command configures peer's NAN schedule. To remove previous
+	 * schedule for a given %map_id, set %sched.num_channels = 0.
+	 * %ulw attributes are used to provide the initial information about
+	 * peer's unaligned schedule. Further updates to ULW should be tracked
+	 * internally by the device/driver.
+	 */
+	int (*nan_config_peer_schedule)(void *priv, const u8 *peer,
+					u16 cdw, u8 sequence_id,
+					u16 max_chan_switch_time,
+					const struct wpabuf *ulw,
+					struct nan_peer_schedule_config *sched);
 #endif /* CONFIG_NAN */
 };
 
