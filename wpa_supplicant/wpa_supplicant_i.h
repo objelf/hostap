@@ -1682,6 +1682,8 @@ struct wpa_supplicant {
 	struct nan_cluster_config nan_config;
 	u8 schedule_sequence_id;
 	struct nan_schedule_config nan_sched[MAX_NAN_RADIOS];
+	struct wpa_freq_range_list nan_disallowed_freqs;
+	u16 nan_max_bw;
 	u8 nan_supported_csids;
 #endif /* CONFIG_NAN */
 };
