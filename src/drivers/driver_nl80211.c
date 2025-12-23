@@ -6067,7 +6067,7 @@ static int wpa_driver_nl80211_sta_add(void *priv,
 
 	wpa_printf(MSG_DEBUG, "nl80211: %s STA " MACSTR,
 		   cmd_string, MAC2STR(params->addr));
-	msg = nl80211_bss_msg(bss, 0, cmd);
+	msg = nl80211_cmd_msg(bss, 0, cmd);
 	if (!msg)
 		goto fail;
 
