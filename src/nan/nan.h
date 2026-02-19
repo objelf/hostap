@@ -13,6 +13,7 @@
 
 struct nan_cluster_config;
 enum nan_reason;
+struct ieee80211_mgmt;
 
 /*
  * struct nan_device_capabilities - NAN device capabilities.
@@ -414,5 +415,7 @@ int nan_add_peer(struct nan_data *nan, const u8 *addr,
 bool nan_publish_instance_id_valid(struct nan_data *nan, u8 instance_id,
 				   u8 *service_id);
 void nan_set_cluster_id(struct nan_data *nan, const u8 *cluster_id);
+int nan_action_rx(struct nan_data *nan, const struct ieee80211_mgmt *mgmt,
+		  size_t len);
 
 #endif /* NAN_H */
