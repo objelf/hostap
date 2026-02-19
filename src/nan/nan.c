@@ -1068,6 +1068,10 @@ static int nan_action_build(struct nan_data *nan, struct nan_peer *peer,
 	if (ret)
 		return ret;
 
+	ret = nan_sec_add_attrs(nan, peer, subtype, buf);
+	if (ret)
+		return ret;
+
 	ret = nan_ndl_add_avail_attrs(nan, peer, buf);
 	if (ret)
 		return ret;
@@ -1103,6 +1107,10 @@ static int nan_action_send(struct nan_data *nan, struct nan_peer *peer,
 		return -1;
 
 	ret = nan_action_build(nan, peer, subtype, buf);
+	if (ret)
+		goto out;
+
+	ret = nan_sec_pre_tx(nan, peer, buf);
 	if (ret)
 		goto out;
 
