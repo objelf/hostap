@@ -1733,3 +1733,51 @@ int nan_ndl_naf_sent(struct nan_data *nan, struct nan_peer *peer,
 	 */
 	return 0;
 }
+
+
+/*
+ * nan_ndl_add_elem_container_attr - Add NAN element container attribute
+ *
+ * @nan: NAN module context from nan_init()
+ * @peer: the peer with whom the NDL is being setup
+ * @buf: wpabuf to which the attribute would be added
+ */
+void nan_ndl_add_elem_container_attr(struct nan_data *nan,
+				     struct nan_peer *peer,
+				     struct wpabuf *buf)
+{
+	struct nan_ndl *ndl;
+
+	if (!peer || !peer->ndl || !peer->ndl->sched.elems)
+		return;
+
+	ndl = peer->ndl;
+
+	wpa_printf(MSG_DEBUG,
+		   "NAN: Add element container. state=%s, status=%u",
+		   nan_ndl_state_str(ndl->state), ndl->status);
+
+	if (peer->ndl->status == NAN_NDL_STATUS_REJECTED)
+		return;
+
+	/* Element container is expected only in NDP request/response */
+	switch (ndl->state) {
+	case NAN_NDL_STATE_START:
+	case NAN_NDL_STATE_REQ_RECV:
+		break;
+	case NAN_NDL_STATE_NONE:
+	case NAN_NDL_STATE_RES_RECV:
+	case NAN_NDL_STATE_REQ_SENT:
+	case NAN_NDL_STATE_RES_SENT:
+	case NAN_NDL_STATE_CON_SENT:
+	case NAN_NDL_STATE_CON_RECV:
+	case NAN_NDL_STATE_DONE:
+	default:
+		return;
+	}
+
+	wpabuf_put_u8(buf, NAN_ATTR_ELEM_CONTAINER);
+	wpabuf_put_le16(buf, 1 + wpabuf_len(peer->ndl->sched.elems));
+	wpabuf_put_u8(buf, 0);
+	wpabuf_put_buf(buf, peer->ndl->sched.elems);
+}
