@@ -173,18 +173,35 @@ struct nan_dev_capa_entry {
 };
 
 /*
+ * struct nan_elem_container_entry - NAN element container entry
+ *
+ * @list: Used for linking in the element container entries list.
+ * @map_id: Map id of the element container.
+ * @len: Length of data.
+ * @data: Pointer to the data.
+ */
+struct nan_elem_container_entry {
+	struct dl_list list;
+	u8 map_id;
+	u16 len;
+	u8 data[];
+};
+
+/*
  * struct nan_peer_info - NAN peer information
  *
  * @last_seen: Timestamp of the last update of the peer info.
  * @seq_id: Sequence id of the last availability update.
  * @avail_entries: List of availability entries of the peer.
  * @dev_capa: List of device capabilities of the peer.
+ * @element_container: List of element container entries of the peer.
  */
 struct nan_peer_info {
 	struct os_reltime last_seen;
 	u8 seq_id;
 	struct dl_list avail_entries;
 	struct dl_list dev_capa;
+	struct dl_list element_container;
 };
 
 /**
