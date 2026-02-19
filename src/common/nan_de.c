@@ -1438,14 +1438,13 @@ static void nan_de_rx_sda(struct nan_de *de, const u8 *peer_addr, const u8 *a3,
 		if (end - sda < 1)
 			return;
 		flen = *sda++;
+
 		if (end - sda < flen)
 			return;
-		if (flen >= 4 && WPA_GET_BE24(sda) == OUI_WFA) {
-			srv_proto_type = sda[3];
-			ssi = sda + 4;
-			ssi_len = flen - 4;
-			wpa_printf(MSG_DEBUG, "NAN: Service Protocol Type %d",
-				   srv_proto_type);
+
+		if (flen) {
+			ssi = sda;
+			ssi_len = flen;
 			wpa_hexdump(MSG_MSGDUMP, "NAN: ssi", ssi, ssi_len);
 		}
 		sda += flen;
