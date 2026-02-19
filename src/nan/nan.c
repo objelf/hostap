@@ -1024,3 +1024,14 @@ bool nan_publish_instance_id_valid(struct nan_data *nan, u8 instance_id,
 		   "NAN: TODO: Publish instance ID validation not implemented");
 	return true;
 }
+
+
+/*
+ * nan_set_cluster_id - Set the cluster ID
+ * @nan: NAN module context from nan_init()
+ * @cluster_id: the cluster ID (6 bytes)
+ */
+void nan_set_cluster_id(struct nan_data *nan, const u8 *cluster_id)
+{
+	os_memcpy(nan->cluster_id, cluster_id, sizeof(nan->cluster_id));
+}
