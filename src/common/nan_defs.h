@@ -525,4 +525,15 @@ struct nan_shared_key {
 	u8 key[0];
 } STRUCT_PACKED;
 
+/* See Table 141 (Capability Info Field) */
+#define NAN_DEV_CAPA_EXT_INFO_0_REG_VALID         BIT(0)
+#define NAN_DEV_CAPA_EXT_INFO_0_INDOOR_AP         BIT(1)
+#define NAN_DEV_CAPA_EXT_INFO_0_SP_AP             BIT(2)
+#define NAN_DEV_CAPA_EXT_INFO_0_VLP               BIT(3)
+#define NAN_DEV_CAPA_EXT_INFO_0_INDOOR_ENABLED_AP BIT(4)
+#define NAN_DEV_CAPA_EXT_INFO_0_INDOOR_SP_AP      BIT(5)
+
+#define NAN_DEV_CAPA_EXT_INFO_1_PAIRING_SETUP     BIT(0)
+#define NAN_DEV_CAPA_EXT_INFO_1_NPK_NIK_CACHING   BIT(1)
+
 #endif /* NAN_DEFS_H */
