@@ -190,6 +190,38 @@ struct nan_ndl *nan_ndl_alloc(struct nan_data *nan)
 }
 
 
+static int nan_ndl_validate_peer_avail(struct nan_data *nan,
+				       struct nan_peer *peer)
+{
+	struct nan_ndl *ndl = peer->ndl;
+	int ret;
+
+	/* first validate if immutable is covered by the availability map */
+	ret = nan_sched_covered_by_avail_entries(nan, &peer->info.avail_entries,
+						 ndl->immut_sched,
+						 ndl->immut_sched_len);
+	if (ret <= 0) {
+		wpa_printf(MSG_DEBUG,
+			   "NAN: Peer avail: Immutable is not covered by avail");
+		return -1;
+	}
+
+	/* now validate NDC schedule is covered by the availability map */
+	ret = nan_sched_covered_by_avail_entries(nan, &peer->info.avail_entries,
+						 ndl->ndc_sched,
+						 ndl->ndc_sched_len);
+	if (ret <= 0) {
+		wpa_printf(MSG_DEBUG,
+			   "NAN: Peer avail: NDC is not covered by avail");
+		return -1;
+	}
+
+	wpa_printf(MSG_DEBUG,
+		   "NAN: NDL: peer NDC and immutable are covered by avail");
+	return 0;
+}
+
+
 static enum nan_ndl_status nan_ndl_res_status(struct nan_data *nan,
 					      struct nan_peer *peer)
 {
@@ -399,6 +431,7 @@ static int nan_ndl_attr_handle_req(struct nan_data *nan, struct nan_peer *peer,
 				   const struct ndl_attr_params *params)
 {
 	struct nan_ndl *ndl;
+	int ret;
 
 	wpa_printf(MSG_DEBUG, "NAN: NDL: Handle request");
 
@@ -460,6 +493,10 @@ static int nan_ndl_attr_handle_req(struct nan_data *nan, struct nan_peer *peer,
 		ndl->immut_sched_len = params->immut_sched_len;
 	}
 
+	ret = nan_ndl_validate_peer_avail(nan, peer);
+	if (!ret)
+		goto fail;
+
 	nan_ndl_set_state(nan, ndl, NAN_NDL_STATE_REQ_RECV);
 
 	wpa_printf(MSG_DEBUG, "NAN: NDL: Handle request done");
@@ -474,6 +511,7 @@ static int nan_ndl_attr_handle_resp(struct nan_data *nan, struct nan_peer *peer,
 				    const struct ndl_attr_params *params)
 {
 	struct nan_ndl *ndl = peer->ndl;
+	int ret;
 
 	wpa_printf(MSG_DEBUG, "NAN: NDL: Handle response");
 
@@ -548,6 +586,7 @@ static int nan_ndl_attr_handle_resp(struct nan_data *nan, struct nan_peer *peer,
 		if (!ndl->ndc_sched) {
 			wpa_printf(MSG_DEBUG,
 				   "NAN: NDL: Resp: Failed to allocate NDC schedule");
+			ret = -1;
 			goto fail;
 		}
 
@@ -568,10 +607,15 @@ static int nan_ndl_attr_handle_resp(struct nan_data *nan, struct nan_peer *peer,
 		if (!ndl->immut_sched) {
 			wpa_printf(MSG_DEBUG,
 				   "NAN: NDL: Resp: fail allocate immutable schedule");
+			ret = -1;
 			goto fail;
 		}
 		ndl->immut_sched_len = params->immut_sched_len;
 	}
+
+	ret = nan_ndl_validate_peer_avail(nan, peer);
+	if (!ret)
+		goto fail;
 
 	wpa_printf(MSG_DEBUG, "NAN: NDL: Resp: status=%u", params->status);
 
@@ -585,7 +629,7 @@ fail:
 	ndl->status = NAN_NDL_STATUS_REJECTED;
 	ndl->reason = NAN_REASON_RESOURCE_LIMITATION;
 	ndl->send_naf_on_error = 1;
-	return 0;
+	return ret;
 }
 
 
@@ -593,6 +637,7 @@ static int nan_ndl_attr_handle_conf(struct nan_data *nan, struct nan_peer *peer,
 				    const struct ndl_attr_params *params)
 {
 	struct nan_ndl *ndl = peer->ndl;
+	int ret;
 
 	if (!ndl) {
 		wpa_printf(MSG_DEBUG,
@@ -660,6 +705,7 @@ static int nan_ndl_attr_handle_conf(struct nan_data *nan, struct nan_peer *peer,
 		if (!ndl->ndc_sched) {
 			wpa_printf(MSG_DEBUG,
 				   "NAN: NDL: Failed to allocate NDC schedule");
+			ret = -1;
 			goto fail;
 		}
 		ndl->ndc_sched_len = params->ndc_sched_len;
@@ -677,10 +723,15 @@ static int nan_ndl_attr_handle_conf(struct nan_data *nan, struct nan_peer *peer,
 		if (!ndl->immut_sched) {
 			wpa_printf(MSG_DEBUG,
 				   "NAN: NDL: Failed to allocate immutable schedule");
+			ret = -1;
 			goto fail;
 		}
 		ndl->immut_sched_len = params->immut_sched_len;
 	}
+
+	ret = nan_ndl_validate_peer_avail(nan, peer);
+	if (!ret)
+		goto fail;
 
 	nan_ndl_set_state(nan, ndl, NAN_NDL_STATE_DONE);
 	return 0;
@@ -688,7 +739,7 @@ static int nan_ndl_attr_handle_conf(struct nan_data *nan, struct nan_peer *peer,
 fail:
 	ndl->reason = NAN_REASON_RESOURCE_LIMITATION;
 	ndl->send_naf_on_error = 1;
-	return -1;
+	return ret;
 }
 
 
