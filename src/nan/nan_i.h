@@ -460,8 +460,16 @@ bool nan_sched_covered_by_avail_entry(struct nan_data *nan,
 				      struct nan_avail_entry *avail,
 				      struct bitfield *sched_bf,
 				      u8 map_id);
-int nan_sched_covered_by_avail_entries(struct nan_data *nan,
-				       struct dl_list *avail_entries,
-				       u8 *sched,
-				       u8 sched_len);
+bool nan_sched_covered_by_avail_entries(struct nan_data *nan,
+					struct dl_list *avail_entries,
+					u8 *sched, u8 sched_len);
+bool
+nan_sched_bf_covered_by_avail_entries_and_chan(struct nan_data *nan,
+					       const struct dl_list *avail_entries,
+					       struct bitfield *sched_bf,
+					       u8 map_id,
+					       u8 op_class, u16 cbm);
+struct bitfield * nan_avail_entries_to_bf(struct nan_data *nan,
+					  const struct dl_list *avail_entries,
+					  u8 op_class, u16 cbm, u16 pri_cbm);
 #endif /* NAN_I_H */
