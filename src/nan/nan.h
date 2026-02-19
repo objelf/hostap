@@ -200,6 +200,8 @@ struct nan_schedule {
  *     NAN_NDP_ACTION_REQ).
  * @status: Response status.
  * @reason_code: In case of rejected response, the rejection reason.
+ * @sched_valid: Indicates whether the schedule field is valid.
+ * @sched: The NAN schedule associated with the NDP parameters.
  */
 struct nan_ndp_params {
 	enum nan_ndp_action type;
@@ -219,13 +221,16 @@ struct nan_ndp_params {
 		 * Used with both NAN_NDP_ACTION_RESP (as a response to an NDP
 		 * request) and NAN_NDP_ACTION_CONF (as a response to an NDP
 		 * response with a counter).
-		 * */
+		 */
 		struct nan_ndp_setup_resp {
 			u8 resp_ndi[ETH_ALEN];
 			u8 status;
 			u8 reason_code;
 		} resp;
 	} u;
+
+	bool sched_valid;
+	struct nan_schedule sched;
 };
 
 /*
