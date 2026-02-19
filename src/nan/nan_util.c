@@ -9,6 +9,7 @@
 #include "includes.h"
 #include "common.h"
 #include "nan_i.h"
+#include "common/ieee802_11_common.h"
 
 
 static void nan_attrs_clear_list(struct nan_data *nan,
@@ -338,4 +339,42 @@ void nan_add_dev_capa_attr(struct nan_data *nan, struct wpabuf *buf)
 	wpabuf_put_u8(buf, nan->cfg->dev_capa.n_antennas);
 	wpabuf_put_le16(buf, nan->cfg->dev_capa.channel_switch_time);
 	wpabuf_put_u8(buf, nan->cfg->dev_capa.capa);
+}
+
+
+/**
+ * nan_chan_to_chan_idx_map - convert an op_class and chan to channel
+ * bitmap
+ *
+ * @nan: NAN module context from nan_init()
+ * @op_class: the operating class
+ * @channel: channel number
+ * @chan_idx_map: On success, would hold the channel index bitmap
+ * Returns 0 on success, otherwise a negative value
+ */
+int nan_chan_to_chan_idx_map(struct nan_data *nan,
+			     u8 op_class, u8 channel, u16 *chan_idx_map)
+{
+	u32 i;
+	int ret;
+
+	if (!chan_idx_map)
+		return -1;
+
+	for (i = 0; global_op_class[i].op_class; i++)
+		if (global_op_class[i].op_class == op_class)
+			break;
+
+	if (!global_op_class[i].op_class)
+		return -1;
+
+	ret = op_class_chan_to_idx(&global_op_class[i], channel);
+	if (ret < 0)
+		return ret;
+
+	if ((u16)ret >= (sizeof(*chan_idx_map) * 8))
+		return -1;
+
+	*chan_idx_map = BIT(ret);
+	return 0;
 }
