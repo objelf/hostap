@@ -279,6 +279,8 @@ struct nan_ndp_connection_params {
  * @publish_inst_id: identifier for the publish instance function
  * @ssi: service specific information
  * @ssi_len: service specific information length
+ * @csid: NAN cipher suite identifier
+ * @pmkid: NAN PMK identifier; can be NULL if security is not negotiated
  */
 struct nan_ndp_action_notif_params {
 	struct nan_ndp_id ndp_id;
@@ -290,6 +292,8 @@ struct nan_ndp_action_notif_params {
 	u8 publish_inst_id;
 	const u8 *ssi;
 	size_t ssi_len;
+	enum nan_cipher_suite_id csid;
+	const u8 *pmkid;
 };
 
 /**
