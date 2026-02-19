@@ -57,6 +57,17 @@ static void nan_peer_flush_avail(struct nan_peer_info *info)
 }
 
 
+static void nan_peer_flush_dev_capa(struct nan_peer_info *info)
+{
+	struct nan_dev_capa_entry *cur, *next;
+
+	dl_list_for_each_safe(cur, next, &info->dev_capa,
+			      struct nan_dev_capa_entry, list) {
+		dl_list_del(&cur->list);
+		os_free(cur);
+	}
+}
+
 static void nan_del_peer(struct nan_data *nan, struct nan_peer *peer)
 {
 	if (!peer)
@@ -87,6 +98,7 @@ static void nan_del_peer(struct nan_data *nan, struct nan_peer *peer)
 
 	dl_list_del(&peer->list);
 	nan_peer_flush_avail(&peer->info);
+	nan_peer_flush_dev_capa(&peer->info);
 	os_free(peer);
 }
 
@@ -784,6 +796,54 @@ out:
 }
 
 
+static void nan_parse_peer_device_capa(struct nan_data *nan,
+				       struct nan_peer *peer,
+				       const struct nan_attrs *attrs)
+{
+	struct nan_attrs_entry *attr;
+
+	dl_list_for_each(attr, &attrs->dev_capa, struct nan_attrs_entry, list) {
+		struct nan_device_capa *capa;
+		struct nan_dev_capa_entry *entry;
+		bool found = false;
+
+		capa = (void *)attr->ptr;
+
+		/* see if we already have an entry for this map id */
+		dl_list_for_each(entry, &peer->info.dev_capa,
+				 struct nan_dev_capa_entry, list) {
+
+			if (entry->map_id == capa->map_id) {
+				found = true;
+				break;
+			}
+		}
+
+		if (!found) {
+			entry = os_zalloc(sizeof(*entry));
+			if (!entry) {
+				wpa_printf(MSG_DEBUG,
+					   "NAN: Failed to allocate device capability entry");
+				return;
+			}
+
+			dl_list_init(&entry->list);
+			dl_list_add(&peer->info.dev_capa, &entry->list);
+		}
+
+		entry->map_id = capa->map_id;
+		entry->capa.cdw_info = le_to_host16(capa->cdw_info);
+		entry->capa.supported_bands = capa->supported_bands;
+		entry->capa.op_mode = capa->op_mode;
+		entry->capa.n_antennas = capa->ant;
+		entry->capa.channel_switch_time =
+			le_to_host16(capa->channel_switch_time);
+		entry->capa.capa = capa->capa;
+
+	}
+}
+
+
 /*
  * nan_parse_device_attrs - Parse device attributes and build availability info
  *
@@ -817,6 +877,8 @@ int nan_parse_device_attrs(struct nan_data *nan, struct nan_peer *peer,
 	}
 
 	nan_merge_peer_info(&peer->info, &info);
+	nan_parse_peer_device_capa(nan, peer, &attrs);
+
 	nan_peer_dump(nan, peer);
 	ret = 0;
 out:
@@ -861,6 +923,7 @@ static struct nan_peer *nan_alloc_peer(struct nan_data *nan)
 		return NULL;
 
 	dl_list_init(&peer->info.avail_entries);
+	dl_list_init(&peer->info.dev_capa);
 	dl_list_add(&nan->peer_list, &peer->list);
 	dl_list_init(&peer->ndps);
 	return peer;
