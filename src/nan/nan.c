@@ -2198,6 +2198,7 @@ int nan_peer_get_pot_avail(struct nan_data *nan, const u8 *addr,
  * @n_chans: Number of channel entries in chans
  * @chans: Channel entries
  * @buf: Buffer to which the availability attributes will be added
+ * @include_potential: If true, potential availability entries will be included
  * Returns: 0 on success; -1 on failure
  *
  * Convert the given NAN schedule information to availability attributes and add
@@ -2208,11 +2209,12 @@ int nan_convert_sched_to_avail_attrs(struct nan_data *nan, u8 sequence_id,
 				     u32 map_ids_bitmap,
 				     size_t n_chans,
 				     struct nan_chan_schedule *chans,
-				     struct wpabuf *buf)
+				     struct wpabuf *buf,
+				     bool include_potential)
 {
 	return nan_add_avail_attrs(nan, sequence_id, map_ids_bitmap,
 				   NAN_AVAIL_ENTRY_CTRL_TYPE_COND,
-				   n_chans, chans, buf);
+				   n_chans, chans, buf, include_potential);
 }
 
 

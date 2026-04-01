@@ -2044,8 +2044,10 @@ static void wpas_nan_de_add_extra_attrs(void *ctx, struct wpabuf *buf)
 
 	wpas_nan_fill_ndp_schedule(wpa_s, &sched);
 	nan_add_dev_capa_attr(wpa_s->nan, buf);
-	nan_convert_sched_to_avail_attrs(wpa_s->nan, wpa_s->schedule_sequence_id,
-					 map_ids, sched.n_chans,sched.chans, buf);
+	nan_convert_sched_to_avail_attrs(wpa_s->nan,
+					 wpa_s->schedule_sequence_id,
+					 map_ids, sched.n_chans,
+					 sched.chans, buf, true);
 }
 
 
