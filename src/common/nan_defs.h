@@ -137,6 +137,40 @@ enum nan_service_protocol_type {
 #define NAN_SRF_CTRL_BF_IDX_MSK (BIT(0) | BIT(1))
 #define NAN_SRF_CTRL_BF_IDX_POS 2
 
+/* See Table 128 (NPBA format)  */
+#define NAN_PBA_TYPE_MSK 0x7
+#define NAN_PBA_STATUS_MSK 0x7
+#define NAN_PBA_STATUS_POS 4
+
+/* See Table 128 (NPBA format)  */
+enum nan_pba_type {
+	NAN_PBA_TYPE_ADVERTISE = 0,
+	NAN_PBA_TYPE_REQUEST   = 1,
+	NAN_PBA_TYPE_RESPONSE  = 2,
+};
+
+/* See Table 128 (NPBA format)  */
+enum nan_pba_status {
+	NAN_PBA_STATUS_ACCEPTED = 0,
+	NAN_PBA_STATUS_REJECTED = 1,
+	NAN_PBA_STATUS_COMEBACK = 2,
+};
+
+/* See Table 128 (NPBA format)  */
+enum nan_pairing_bootstrapping_method {
+	NAN_PBA_METHOD_OPPORTUNISTIC      = BIT(0),
+	NAN_PBA_METHOD_PIN_DISPLAY        = BIT(1),
+	NAN_PBA_METHOD_PASSPHRASE_DISPLAY = BIT(2),
+	NAN_PBA_METHOD_QR_DISPLAY         = BIT(3),
+	NAN_PBA_METHOD_NFC_TAG            = BIT(4),
+	NAN_PBA_METHOD_PIN_KEYPAD         = BIT(5),
+	NAN_PBA_METHOD_PASSPHRASE_KEYPAD  = BIT(6),
+	NAN_PBA_METHOD_QR_SCAN            = BIT(7),
+	NAN_PBA_METHOD_NFC_READER         = BIT(8),
+	NAN_PBA_METHOD_SERVICE_MANAGED    = BIT(14),
+	NAN_PBA_METHOD_HANDSHAKE_SKIPPED  = BIT(15),
+};
+
 #define NAN_ATTR_HDR_LEN 3
 #define NAN_SERVICE_ID_LEN 6
 
