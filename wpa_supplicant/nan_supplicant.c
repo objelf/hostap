@@ -2073,3 +2073,13 @@ void wpas_nan_tx_status(struct wpa_supplicant *wpa_s,
 	if (!nan_tx_status(wpa_s->nan, mgmt->da, data, data_len, acked))
 		wpa_printf(MSG_DEBUG, "NAN: Processed NAF tx status");
 }
+
+
+void wpas_nan_rx_naf(struct wpa_supplicant *wpa_s,
+		     const struct ieee80211_mgmt *mgmt, size_t len)
+{
+	if (!wpas_nan_ready(wpa_s))
+		return;
+
+	nan_action_rx(wpa_s->nan, mgmt, len);
+}
