@@ -94,7 +94,7 @@ class NanDevice:
 
     def publish(self, service_name, ssi=None, unsolicited=1, solicited=1,
                 sync=1, match_filter_rx=None, match_filter_tx=None,
-                close_proximity=0):
+                close_proximity=0, pbm=0):
 
         cmd = f"NAN_PUBLISH service_name={service_name} sync={sync} srv_proto_type=2 fsd=0"
 
@@ -112,6 +112,9 @@ class NanDevice:
 
         if match_filter_tx:
             cmd += f" match_filter_tx={match_filter_tx}"
+
+        if pbm:
+            cmd += f" pbm={pbm}"
 
         return self.wpas.request(cmd)
 
@@ -209,6 +212,20 @@ class NanDevice:
             cmd += " close_proximity=1"
 
         return self.wpas.request(cmd)
+
+    def bootstrap(self, peer, handle, peer_instance_id, pbm, auth=False):
+        logger.info(f"Bootstrapping NAN with peer {peer} pbm={pbm} auth={auth} on {self.ifname}")
+        auth_param = " auth" if auth else ""
+
+        if "OK" not in self.wpas.request(f"NAN_BOOTSTRAP {peer} handle={handle} "
+                         f"req_instance_id={peer_instance_id} method={pbm}" + auth_param):
+            raise Exception(f"{self.ifname}: failed to bootstrap with {peer}")
+
+    def bootstrap_reset(self, peer):
+        logger.info(f"Reset Bootstrapping NAN with peer {peer}")
+
+        if "OK" not in self.wpas.request(f"NAN_BOOTSTRAP_RESET {peer}"):
+            raise Exception(f"{self.ifname}: failed to reset bootstrap with {peer}")
 
     def cancel_publish(self, publish_id):
         logger.info(f"Cancelling publish with ID {publish_id} on {self.ifname}")
@@ -1152,3 +1169,123 @@ def test_nan_dp_wrong_pwd(dev, apdev, params):
 def test_nan_dp_pmk(dev, apdev, params):
     """NAN DP - 3way NDL + SK CCMP security with PMK"""
     run_nan_dp(counter=True, csid=1, use_pmk=True)
+
+def nan_pre_bootstrap(pub, sub, pmb=0x1):
+    paddr = pub.wpas.own_addr()
+    saddr = sub.wpas.own_addr()
+
+    pssi = "aabbccdd"
+    sssi = "ddbbccaa"
+
+    pid = pub.publish("test_service", ssi=pssi, unsolicited=0, pbm=pmb)
+    sid = sub.subscribe("test_service", ssi=sssi)
+
+    logger.info(f"Publish ID: {pid}, Subscribe ID: {sid}")
+
+    ev = sub.wpas.wait_event(["NAN-DISCOVERY-RESULT"], timeout=2)
+    if ev is None:
+        raise Exception("NAN-DISCOVERY-RESULT event not seen")
+
+    nan_sync_verify_event(ev, paddr, pid, sid, pssi)
+
+    ev = pub.wpas.wait_event(["NAN-REPLIED"], timeout=2)
+    if ev is None:
+        raise Exception("NAN-REPLIED event not seen")
+
+    nan_sync_verify_event(ev, saddr, pid, sid, sssi)
+
+    return pid, sid, paddr, saddr
+
+def test_nan_bootstrap_opportunistic(dev, apdev, params):
+    """NAN opportunistic bootstrap with auto accept"""
+    with hwsim_nan_radios(count=2) as [wpas1, wpas2], \
+        NanDevice(wpas1, "nan0") as pub, NanDevice(wpas2, "nan1") as sub:
+        pid, sid, paddr, saddr = nan_pre_bootstrap(pub, sub)
+
+        sub.bootstrap(paddr, sid, pid, 0x1)
+
+        ev = sub.wpas.wait_event(["NAN-BOOTSTRAP-SUCCESS"], timeout=2)
+        if ev is None:
+            raise Exception("NAN-BOOTSTRAP-SUCCESS event not seen")
+
+        ev = pub.wpas.wait_event(["NAN-BOOTSTRAP-SUCCESS"], timeout=2)
+        if ev is None:
+            raise Exception("NAN-BOOTSTRAP-SUCCESS event not seen")
+
+def test_nan_bootstrap_password(dev, apdev, params):
+    """NAN bootstrap with password"""
+    with hwsim_nan_radios(count=2) as [wpas1, wpas2], \
+        NanDevice(wpas1, "nan0") as pub, NanDevice(wpas2, "nan1") as sub:
+        pid, sid, paddr, saddr = nan_pre_bootstrap(pub, sub, pmb=0x4)
+
+        # request bootstrap with passphrase using passpharse keypad method (BIT 6)
+        sub.bootstrap(paddr, sid, pid, 0x40)
+
+        ev = pub.wpas.wait_event(["NAN-BOOTSTRAP-REQUEST"], timeout=2)
+        if ev is None or "peer_nmi=" + saddr not in ev or "pbm=0x0004" not in ev:
+            raise Exception("NAN-BOOTSTRAP-REQUEST event not seen")
+
+        pub.bootstrap(saddr, pid, sid, 0x4, auth=True)
+        ev = sub.wpas.wait_event(["NAN-BOOTSTRAP-SUCCESS"], timeout=2)
+        if ev is None or "pbm=0x0040" not in ev:
+            raise Exception("NAN-BOOTSTRAP-SUCCESS event not seen (subscriber)")
+
+        ev = pub.wpas.wait_event(["NAN-BOOTSTRAP-SUCCESS"], timeout=2)
+        if ev is None or "pbm=0x0004" not in ev:
+            raise Exception("NAN-BOOTSTRAP-SUCCESS event not seen (publisher)")
+
+def test_nan_bootstrap_password_with_delays(dev, apdev, params):
+    """NAN bootstrap with password with delay and wrong method"""
+    with hwsim_nan_radios(count=2) as [wpas1, wpas2], \
+        NanDevice(wpas1, "nan0") as pub, NanDevice(wpas2, "nan1") as sub:
+        pid, sid, paddr, saddr = nan_pre_bootstrap(pub, sub, pmb=0x4)
+
+        # request bootstrap with passphrase using passpharse keypad method (BIT 6)
+        sub.bootstrap(paddr, sid, pid, 0x40)
+
+        ev = pub.wpas.wait_event(["NAN-BOOTSTRAP-REQUEST"], timeout=2)
+        if ev is None or "peer_nmi=" + saddr not in ev or "pbm=0x0004" not in ev:
+            raise Exception("NAN-BOOTSTRAP-REQUEST event not seen")
+
+        # To not authenticate the peer for 10 seconds and verify that no success event is sent
+        ev = sub.wpas.wait_event(["NAN-BOOTSTRAP-SUCCESS"], timeout=10)
+        if ev is not None:
+            raise Exception("Got unexpected NAN-BOOTSTRAP-SUCCESS event seen (subscriber)")
+
+        # now try with wrong method (QR code display, BIT 3)
+        pub.bootstrap(saddr, pid, sid, 0x8, auth=True)
+        ev = sub.wpas.wait_event(["NAN-BOOTSTRAP-SUCCESS"], timeout=5)
+        if ev is not None:
+            raise Exception("Got unexpected NAN-BOOTSTRAP-SUCCESS event seen (subscriber)")
+
+        # now authenticate properly
+        pub.bootstrap(saddr, pid, sid, 0x4, auth=True)
+        ev = sub.wpas.wait_event(["NAN-BOOTSTRAP-SUCCESS"], timeout=2)
+        if ev is None or "pbm=0x0040" not in ev:
+            raise Exception("NAN-BOOTSTRAP-SUCCESS event not seen (subscriber)")
+
+        ev = pub.wpas.wait_event(["NAN-BOOTSTRAP-SUCCESS"], timeout=2)
+        if ev is None or "pbm=0x0004" not in ev:
+            raise Exception("NAN-BOOTSTRAP-SUCCESS event not seen (publisher)")
+
+        pub.bootstrap_reset(saddr)
+        sub.bootstrap_reset(paddr)
+
+def test_nan_bootstrap_password_no_response(dev, apdev, params):
+    """NAN bootstrap with password with no response from publisher"""
+    with hwsim_nan_radios(count=2) as [wpas1, wpas2], \
+        NanDevice(wpas1, "nan0") as pub, NanDevice(wpas2, "nan1") as sub:
+        pid, sid, paddr, saddr = nan_pre_bootstrap(pub, sub, pmb=0x4)
+
+        # cancel the publish to simulate no response
+        pub.cancel_publish(pid)
+
+        # request bootstrap with passphrase using passpharse keypad method (BIT 6)
+        sub.bootstrap(paddr, sid, pid, 0x40)
+
+        ev = sub.wpas.wait_event(["NAN-BOOTSTRAP-SUCCESS"], timeout=10)
+        if ev is not None:
+            raise Exception("Got unexpected NAN-BOOTSTRAP-SUCCESS event seen (subscriber)")
+
+        sub.bootstrap_reset(paddr)
+        sub.cancel_subscribe(sid)
