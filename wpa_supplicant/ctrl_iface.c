@@ -12883,6 +12883,11 @@ static int wpas_ctrl_nan_publish(struct wpa_supplicant *wpa_s, char *cmd,
 			continue;
 		}
 
+		if (os_strncmp(token, "pbm=", 4) == 0) {
+			params.pbm = strtol(token + 4, NULL, 0);
+			continue;
+		}
+
 		wpa_printf(MSG_INFO, "CTRL: Invalid NAN_PUBLISH parameter: %s",
 			   token);
 		goto fail;
@@ -13107,6 +13112,11 @@ static int wpas_ctrl_nan_subscribe(struct wpa_supplicant *wpa_s, char *cmd,
 
 		if (os_strcmp(token, "close_proximity=1") == 0) {
 			params.close_proximity = true;
+			continue;
+		}
+
+		if (os_strncmp(token, "pbm=", 4) == 0) {
+			params.pbm = strtol(token + 4, NULL, 0);
 			continue;
 		}
 
