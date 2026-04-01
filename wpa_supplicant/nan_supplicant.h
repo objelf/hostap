@@ -100,6 +100,8 @@ void wpas_nan_cancel_subscribe(struct wpa_supplicant *wpa_s,
 int wpas_nan_transmit(struct wpa_supplicant *wpa_s, int handle,
 		      const struct wpabuf *ssi, const struct wpabuf *elems,
 		      const u8 *peer_addr, u8 req_instance_id);
+void wpas_nan_tx_status(struct wpa_supplicant *wpa_s,
+			const u8 *data, size_t data_len, u8 acked);
 
 #else /* CONFIG_NAN_USD || CONFIG_NAN */
 
@@ -118,6 +120,11 @@ void wpas_nan_de_rx_sdf(struct wpa_supplicant *wpa_s, const u8 *src,
 {}
 
 static inline void wpas_nan_de_flush(struct wpa_supplicant *wpa_s)
+{}
+
+static inline void wpas_nan_tx_status(struct wpa_supplicant *wpa_s,
+				      const u8 *data, size_t data_len,
+				      u8 acked)
 {}
 
 #endif /* CONFIG_NAN_USD || CONFIG_NAN */
