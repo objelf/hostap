@@ -1728,7 +1728,7 @@ int wpas_nan_ndp_terminate(struct wpa_supplicant *wpa_s, char *cmd)
 }
 
 
-/* Format: NAN_PEER_INFO <addr> <schedule|potential> */
+/* Format: NAN_PEER_INFO <addr> <schedule|potential|capa> [map_id] */
 int wpas_nan_peer_info(struct wpa_supplicant *wpa_s, const char *cmd,
 		       char *reply, size_t reply_size)
 {
@@ -1772,7 +1772,41 @@ int wpas_nan_peer_info(struct wpa_supplicant *wpa_s, const char *cmd,
 		}
 
 		ret = nan_peer_dump_pot_avail_to_buf(&pot_avail, reply, reply_size);
-	} else {
+	} else if (os_strncmp(pos + 1, "capa", 4) == 0) {
+		int map_id = 0;
+		const struct nan_device_capabilities *capa;
+		int written = 0;
+
+		if (os_strchr(pos + 1, ' '))
+			map_id = atoi(os_strchr(pos + 1, ' ') + 1);
+
+		capa = nan_peer_get_device_capabilities(wpa_s->nan, addr,
+							map_id);
+		if (!capa) {
+			wpa_printf(MSG_DEBUG,
+				   "NAN: Failed to get capabilities for peer "
+				   MACSTR, MAC2STR(addr));
+			return -1;
+		}
+
+		written += wpa_scnprintf(reply + written, reply_size - written,
+					"supported_bands=0x%02x\n",
+					capa->supported_bands);
+		written += wpa_scnprintf(reply + written, reply_size - written,
+					"op_modes=0x%04x\n", capa->op_mode);
+		written += wpa_scnprintf(reply + written, reply_size - written,
+					"cdw_info=0x%04x\n", capa->cdw_info);
+		written += wpa_scnprintf(reply + written, reply_size - written,
+					"n_antennas=%d\n", capa->n_antennas);
+		written += wpa_scnprintf(reply + written, reply_size - written,
+					"channel_switch_time=%d\n",
+					capa->channel_switch_time);
+		written += wpa_scnprintf(reply + written, reply_size - written,
+					"capabilities=0x%02x\n", capa->capa);
+
+		ret = written;
+	}
+	else {
 		wpa_printf(MSG_DEBUG, "NAN: Unknown info type: %s", pos + 1);
 		return -1;
 	}
