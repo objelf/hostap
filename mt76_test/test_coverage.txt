@@ -1,0 +1,41 @@
+# hostapd <--> wpa_supplicant mapping for MT7921U test matrix
+# Naming rule:
+#   hostapd_<security>_<band>_<bw>_ch<channel>_<purpose>.conf
+#   wpa_<security>_<band>_<bw>_ch<channel>_<purpose>.conf
+
+#test okay
+mt7902u working as AP, mt7921u working as STA
+hostapd_open_5g.conf <--> wpa-open-5g.conf
+hostapd_wpa3_5g_ht20_ch36_basic.conf <--> wpa_wpa3_5g_ht20_ch36_basic.conf
+hostapd_open_5g_vht80_ch36_basic.conf <--> wpa_open_5g_vht80_ch36_basic.conf
+hostapd_wpa2_5g_vht80_ch36_basic.conf <--> wpa_wpa2_5g_vht80_ch36_basic.conf
+hostapd_wpa3_5g_vht80_ch36_basic.conf <--> wpa_wpa3_5g_vht80_ch36_basic.conf
+hostapd_wpa2wpa3_5g_vht80_ch36_transition.conf <--> wpa_wpa2wpa3_5g_vht80_ch36_transition.conf
+hostapd_owe_5g_vht80_ch36_basic.conf <--> wpa_owe_5g_vht80_ch36_basic.conf
+hostapd_open_5g_vht80_ch149_basic.conf <--> wpa_open_5g_vht80_ch149_basic.conf
+hostapd_wpa2_5g_vht80_ch149_basic.conf <--> wpa_wpa2_5g_vht80_ch149_basic.conf
+hostapd_wpa3_5g_vht80_ch149_basic.conf <--> wpa_wpa3_5g_vht80_ch149_basic.conf
+hostapd_open_5g_vht80_ch36_hidden.conf <--> wpa_open_5g_vht80_ch36_hidden.conf 
+hostapd_owe_5g_vht80_ch149_basic.conf <--> wpa_owe_5g_vht80_ch149_basic.conf
+hostapd_open_2g_ht20_ch6_basic.conf <--> wpa_open_2g_ht20_ch6_basic.conf
+hostapd_wpa2_2g_ht20_ch6_basic.conf <--> wpa_wpa2_2g_ht20_ch6_basic.conf
+hostapd_owe_2g_ht20_ch6_basic.conf <--> wpa_owe_2g_ht20_ch6_basic.conf
+hostapd_open_5g_he80_ch36_basic.conf <--> wpa_open_5g_he80_ch36_basic.conf
+hostapd_wpa2_5g_he80_ch36_basic.conf <--> wpa_wpa2_5g_he80_ch36_basic.conf
+hostapd_wpa3_5g_he80_ch36_basic.conf <--> wpa_wpa3_5g_he80_ch36_basic.conf
+hostapd_owe_5g_he80_ch36_basic.conf <--> wpa_owe_5g_he80_ch36_basic.conf
+hostapd_open_2g_he20_ch6_basic.conf <--> wpa_open_2g_he20_ch6_basic.conf 
+hostapd_wpa2_2g_he20_ch6_basic.conf <--> wpa_wpa2_2g_he20_ch6_basic.conf
+hostapd_owe_2g_he20_ch6_basic.conf <--> wpa_owe_2g_he20_ch6_basic.conf
+hostapd_wpa3_2g_he20_ch6_basic.conf <--> wpa_wpa3_2g_he20_ch6_basic.conf
+hostapd_open_5g_he80_ch149_basic.conf <--> wpa_open_5g_he80_ch149_basic.conf
+hostapd_wpa2_5g_he80_ch149_basic.conf <--> wpa_wpa2_5g_he80_ch149_basic.conf
+hostapd_wpa3_5g_he80_ch149_basic.conf <--> wpa_wpa3_5g_he80_ch149_basic.conf
+hostapd_owe_5g_he80_ch149_basic.conf <--> wpa_owe_5g_he80_ch149_basic.conf
+hostapd_wpa2wpa3_5g_he80_ch36_transition.conf <--> wpa_wpa2wpa3_5g_he80_ch36_transition.conf
+hostapd_wpa2wpa3_5g_he80_ch149_transition.conf <--> wpa_wpa2wpa3_5g_he80_ch149_transition.conf
+
+#TODO test
+
+#wireless db not allow the hostapd working as AP
+hostapd_wpa3_6g_he20_ch5_basic.conf <--> wpa_wpa3_6g_he20_ch5_basic.conf

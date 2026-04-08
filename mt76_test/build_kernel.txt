@@ -1,0 +1,298 @@
+sudo make O=build-wl-20260326  M=drivers/net/wireless/mediatek/mt76 LOCALVERSION="-mt7902-wlnext-20260326"
+sudo make O=build-wl-20260326  M=drivers/net/wireless/mediatek/mt76 LOCALVERSION="-mt7902-wlnext-20260326"  modules_install
+
+sudo modprobe -r mt7925e mt7921u mt792x_usb mt76_usb  mt7925_common mt7921_common mt792x_lib mt76_connac_lib mt76 
+
+sudo modprobe mt76
+sudo modprobe mt76_connac_lib
+sudo modprobe mt792x_lib
+sudo modprobe mt7921_common
+sudo modprobe mt7925_common
+sudo modprobe mt76_usb
+sudo modprobe mt792x_usb
+sudo modprobe mt7921u
+sudo modprobe mt7925e
+
+find drivers/net/wireless/mediatek/mt76 -type f \( -name '*.c' -o -name vi'*.h' \) \
+  | tar -czf mt76_mt7927.tar.gz -T -
+
+sudo nmcli device disconnect wlp58s0
+sudo nmcli device set wlp58s0 managed no
+
+SERIES=1072569
+BASE=~/Downloads/series-$SERIES
+
+mkdir -p "$BASE" &&
+wget -O "$BASE/series-$SERIES.mbox" \
+  "https://patchwork.kernel.org/series/$SERIES/mbox/" &&
+rm -rf "$BASE/split" &&
+mkdir -p "$BASE/split" &&
+git mailsplit -o"$BASE/split" "$BASE/series-$SERIES.mbox"
+
+# test wpa_supplicant
+nmcli device set wlp58s0 managed no
+sudo pkill -f 'wpa_supplicant.*wlp58s0' || true
+cd ~/dev/hostap/wpa_supplicant
+#5g 
+sudo ./wpa_supplicant -D nl80211 -i wlp58s0 -c wlp58s0-seanwang-tp.conf -ddd
+#2.4g
+sudo ./wpa_supplicant -D nl80211 -i wlp58s0 -c wlp58s0-seanwang-tp-2.4g-01.conf -ddd
+sudo ./wpa_supplicant -D nl80211 -i wlp58s0 -c wlp58s0-ATTVcr7kPm.conf -ddd
+sudo ./wpa_supplicant -D nl80211 -i wlp58s0 -c wlp58s0-ATTVcr7kPm-2.4g.conf -ddd
+sudo ./wpa_supplicant -D nl80211 -i wlx000c433a3336 -c mt7902u-open-5g.conf -ddd
+sudo ./wpa_cli -i wlx000c433a3336
+iw event
+
+#test hostapd
+cd ~/dev/hostap_aptest/hostapd/
+sudo mkdir -p /var/run/hostapd
+nmcli device set wlx9e3578c9b1fb managed no
+sudo iw dev wlx9e3578c9b1fb del 2>/dev/null
+sudo iw phy phy5 interface add ap0 type __ap
+sudo ./hostapd -dd hostapd_open_24g.conf
+sudo ./hostapd -dd -i wlxb2301b2cca0e hostapd_open_5g.conf
+
+#one laptop to test station and ap mode
+
+nmcli device set wlx000c433a3336  managed no
+nmcli device set wlx3e6b7c6b4943  managed no
+nmcli device set wlp58s0  managed yes
+
+- 0. using iw dev to check the interfaces and roles
+phy#2
+	Interface wlx000c433a3336
+		ifindex 5
+		wdev 0x200000001
+		addr 00:0c:43:3a:33:36
+		type managed
+		txpower 12.00 dBm
+		multicast TXQ:
+			qsz-byt	qsz-pkt	flows	drops	marks	overlmt	hashcol	tx-bytes	tx-packets
+			0	0	0	0	0	0	0	0		0
+phy#0
+	Interface wlx3e6b7c6b4943
+		ifindex 4
+		wdev 0x1
+		addr 3e:6b:7c:6b:49:43
+		type managed
+		txpower 30.00 dBm
+		multicast TXQ:
+			qsz-byt	qsz-pkt	flows	drops	marks	overlmt	hashcol	tx-bytes	tx-packets
+			0	0	0	0	0	0	0	0		0
+
+
+- 1. check hardware per interface name
+dev=$(readlink -f /sys/class/net/wlx000c433a3336/device); while [ "$dev" != "/" ]; do [ -f "$dev/idVendor" ] && [ -f "$dev/idProduct" ] && { echo "VID:PID $(cat "$dev/idVendor"):$(cat "$dev/idProduct")"; break; }; [ -f "$dev/vendor" ] && [ -f "$dev/device" ] && { echo "PCI VID:DID $(cat "$dev/vendor"):$(cat "$dev/device")"; break; }; dev=$(dirname "$dev"); done
+# show VID:PID 0e8d:7961
+
+dev=$(readlink -f /sys/class/net/wlx3e6b7c6b4943/device); while [ "$dev" != "/" ]; do [ -f "$dev/idVendor" ] && [ -f "$dev/idProduct" ] && { echo "VID:PID $(cat "$dev/idVendor"):$(cat "$dev/idProduct")"; break; }; [ -f "$dev/vendor" ] && [ -f "$dev/device" ] && { echo "PCI VID:DID $(cat "$dev/vendor"):$(cat "$dev/device")"; break; }; dev=$(dirname "$dev"); done
+#show VID:PID 0e8d:7902
+
+sudo iw phy phy0 interface add ap0 type __ap
+#create ap mode on the top of 7902
+#then become
+phy#0
+	Interface wlx3a6b7c6b4943
+		ifindex 6
+		wdev 0x2
+		addr 3a:6b:7c:6b:49:43
+		type managed
+		txpower 30.00 dBm
+		multicast TXQ:
+			qsz-byt	qsz-pkt	flows	drops	marks	overlmt	hashcol	tx-bytes	tx-packets
+			0	0	0	0	0	0	0	0		0
+	Interface wlx3e6b7c6b4943
+		ifindex 4
+		wdev 0x1
+		addr 3e:6b:7c:6b:49:43
+		type managed
+		txpower 30.00 dBm
+		multicast TXQ:
+			qsz-byt	qsz-pkt	flows	drops	marks	overlmt	hashcol	tx-bytes	tx-packets
+			0	0	0	0	0	0	0	0		0
+
+
+
+- run hostapd inside the ns
+sudo ip netns del ns_ap 2>/dev/null
+sudo ip netns del ns_sta 2>/dev/null
+
+sudo ip netns add ns_ap
+sudo ip netns add ns_sta
+
+sudo iw phy phy0 set netns name ns_ap
+sudo iw phy phy2 set netns name ns_sta
+
+cd ~/dev/hostap/hostapd/
+sudo mkdir -p /var/run/hostapd
+sudo ip netns exec ns_ap ./hostapd -dd d-i wlx3e6b7c6b4943 ../mt76_test/hostapd_wpa3_5g_ht20_ch36_basic.conf
+- run wpa_supplicant insdie the ns
+
+cd ~/dev/hostap/wpa_supplicant
+sudo ip netns exec ns_sta ./wpa_supplicant -D nl80211 -i wlx000c433a3336 -ddd -c ../mt76_test/wpa_wpa3_5g_ht20_ch36_basic.conf
+sudo ./wpa_cli -i wlx000c433a3336 status
+
+sudo ip netns exec ns_sta iw dev wlx000c433a3336 link
+sudo ./wpa_cli -i wlx000c433a3336 status
+#check status
+
+sudo ip netns exec ns_ap ip link set lo up
+sudo ip netns exec ns_sta ip link set lo up
+
+sudo ip netns exec ns_ap iw dev
+sudo ip netns exec ns_sta iw dev
+
+sudo ip netns exec ns_ap ip link set wlx3e6b7c6b4943 up
+sudo ip netns exec ns_ap ip link set wlx3e6b7c6b4943 up
+sudo ip netns exec ns_sta ip link set wlx000c433a3336 up
+
+sudo ip netns exec ns_ap ip addr add 192.168.50.1/24 dev wlx3e6b7c6b4943
+sudo ip netns exec ns_sta ip addr add 192.168.50.2/24 dev wlx000c433a3336
+
+sudo ip netns exec ns_ap ip route show table local
+sudo ip netns exec ns_sta ip route show table local
+
+sudo ip netns exec ns_sta ping -c 3 192.168.50.1
+sudo ip netns exec ns_sta ip neigh show
+
+sudo ip netns exec ns_ap iperf3 -s
+sudo ip netns exec ns_sta iperf3 -c 192.168.50.1 -B 192.168.50.2
+
+- 3. check station tx,rx activities
+sudo ip netns exec ns_ap ip -s link show wlx3e6b7c6b4943
+sudo ip netns exec ns_sta ip -s link show wlx000c433a3336
+
+
+sudo ip netns exec ns_sta iw dev wlx000c433a3336 link
+
+#iw event with timestamp
+iw event | ts '[%Y-%m-%d %H:%M:%.S]'
+
+#to know what hardware the interfaces mapped to
+ethtool -i wlx000c433a3336
+ethtool -i wlxb2301b2cca0e
+readlink -f /sys/class/net/wlx000c433a3336/device
+readlink -f /sys/class/net/wlxb2301b2cca0e/device
+readlink -f /sys/class/net/wlx000c433a3336/device/driver
+readlink -f /sys/class/net/wlxb2301b2cca0e/device/driver
+lsusb -t
+lsusb
+
+#oneliner to read pid/vid from interface name
+dev=$(readlink -f /sys/class/net/wlx000c433a3336/device); while [ "$dev" != "/" ]; do [ -f "$dev/idVendor" ] && [ -f "$dev/idProduct" ] && { echo "VID:PID $(cat "$dev/idVendor"):$(cat "$dev/idProduct")"; break; }; [ -f "$dev/vendor" ] && [ -f "$dev/device" ] && { echo "PCI VID:DID $(cat "$dev/vendor"):$(cat "$dev/device")"; break; }; dev=$(dirname "$dev"); done
+
+#read interface under ns for station mode
+sudo ip netns exec ns_sta bash -c '
+dev=$(readlink -f /sys/class/net/wlx000c433a3336/device)
+echo "netdev device path: $dev"
+while [ "$dev" != "/" ]; do
+    echo "checking: $dev"
+    if [ -f "$dev/idVendor" ] && [ -f "$dev/idProduct" ]; then
+        echo "USB VID:PID $(cat "$dev/idVendor"):$(cat "$dev/idProduct")"
+        break
+    fi
+    if [ -f "$dev/vendor" ] && [ -f "$dev/device" ]; then
+        echo "PCI VID:DID $(cat "$dev/vendor"):$(cat "$dev/device")"
+        break
+    fi
+    dev=$(dirname "$dev")
+done
+'
+
+#read interface under ns for ap mode
+sudo ip netns exec ns_ap bash -c '
+dev=$(readlink -f /sys/class/net/wlxb2301b2cca0e/device)
+echo "netdev device path: $dev"
+while [ "$dev" != "/" ]; do
+    echo "checking: $dev"
+    if [ -f "$dev/idVendor" ] && [ -f "$dev/idProduct" ]; then
+        echo "USB VID:PID $(cat "$dev/idVendor"):$(cat "$dev/idProduct")"
+        break
+    fi
+    if [ -f "$dev/vendor" ] && [ -f "$dev/device" ]; then
+        echo "PCI VID:DID $(cat "$dev/vendor"):$(cat "$dev/device")"
+        break
+    fi
+    dev=$(dirname "$dev")
+done
+'
+
+#read all information of interfaces
+
+for i in wlx000c433a3336 wlxb2301b2cca0e; do
+    dev=$(readlink -f /sys/class/net/$i/device)
+
+    echo "=== $i ==="
+    ethtool -i "$i"
+    echo "mac: $(cat /sys/class/net/$i/address)"
+    echo "driver-link: $(readlink -f /sys/class/net/$i/device/driver)"
+    echo "device-link: $dev"
+
+    if [ -f "$dev/idVendor" ] && [ -f "$dev/idProduct" ]; then
+        echo "vid:pid = $(cat "$dev/idVendor"):$(cat "$dev/idProduct")"
+    else
+        echo "vid:pid = not a direct USB device node, checking parents..."
+        p="$dev"
+        found=""
+        while [ "$p" != "/" ]; do
+            if [ -f "$p/idVendor" ] && [ -f "$p/idProduct" ]; then
+                echo "vid:pid = $(cat "$p/idVendor"):$(cat "$p/idProduct")"
+                found=1
+                break
+            fi
+            p=$(dirname "$p")
+        done
+        [ -n "$found" ] || echo "vid:pid = not found"
+    fi
+    echo
+done
+
+##one laptop to test p2p
+
+
+
+#restore sta mode
+sudo ip link set ap0 down
+sudo iw dev ap0 del
+sudo iw phy phy17 interface add wlp58s0 type managed
+sudo ip link set wlp58s0 up
+
+#check tx,rx ip counters
+ip -s link show dev wlxb2301b2cca0e
+
+sudo ip addr flush dev wlp58s0
+sudo ip addr add 192.168.0.101/24 dev wlp58s0
+sudo ip link set wlp58s0 up
+sudo ip route add 192.168.0.0/24 dev wlp58s0
+sudo ip route add default via 192.168.0.254 dev wlp58s0
+RTNETLINK answers: File exists
+sean@sean-HP-EliteBook-830-G6:~/dev/hostap/wpa_supplicant$ 
+
+### testing disconnect and reconnect #######
+sudo cat /sys/kernel/tracing/trace_pipe
+
+for i in $(seq 1 10000); do
+    echo "=== round $i ==="
+    sudo ./wpa_cli -i wlp58s0 disconnect >/dev/null
+    sleep 1
+    sudo ./wpa_cli -i wlp58s0 reconnect >/dev/null
+
+    state=""
+    for t in $(seq 1 20); do
+        state=$(sudo ./wpa_cli -i wlp58s0 status | awk -F= '/^wpa_state=/{print $2}')
+        echo "state=$state"
+        [ "$state" = "COMPLETED" ] && break
+        sleep 1
+    done
+
+    if [ "$state" = "COMPLETED" ]; then
+        echo "round $i connected, now disconnect"
+        sudo ./wpa_cli -i wlp58s0 disconnect >/dev/null
+    else
+        echo "round $i timeout, final state=$state"
+        sudo ./wpa_cli -i wlp58s0 disconnect >/dev/null
+    fi
+
+    sleep 1
+done
+######################################################
