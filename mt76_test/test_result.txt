@@ -1,0 +1,289 @@
+================ FINAL SUMMARY ================
+A = wlxf695c8aae435 (mt7902u)
+B = wlp58s0 (mt7927e)
+
+CASE                               RES    STA_IF             AP_IF              THR(Mbps)    INFO           LOG
+---------------------------------- ------ ------------------ ------------------ ------------ -------------- ------------------------------
+wpa3_5g_vht80_ch36__A_sta_B_ap     PASS   wlxf695c8aae435    wlp58s0            149.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_vht80_ch36__A_sta_B_ap.log
+wpa2wpa3_5g_vht80_ch36_transition__A_sta_B_ap PASS   wlxf695c8aae435    wlp58s0            146.00       rc=0           /tmp/sta_ap_role_logs/wpa2wpa3_5g_vht80_ch36_transition__A_sta_B_ap.log
+owe_5g_vht80_ch36__A_sta_B_ap      PASS   wlxf695c8aae435    wlp58s0            156.00       rc=0           /tmp/sta_ap_role_logs/owe_5g_vht80_ch36__A_sta_B_ap.log
+open_5g_vht80_ch149__A_sta_B_ap    PASS   wlxf695c8aae435    wlp58s0            183.00       rc=0           /tmp/sta_ap_role_logs/open_5g_vht80_ch149__A_sta_B_ap.log
+wpa2_5g_vht80_ch149__A_sta_B_ap    PASS   wlxf695c8aae435    wlp58s0            181.00       rc=0           /tmp/sta_ap_role_logs/wpa2_5g_vht80_ch149__A_sta_B_ap.log
+wpa3_5g_vht80_ch149__A_sta_B_ap    PASS   wlxf695c8aae435    wlp58s0            179.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_vht80_ch149__A_sta_B_ap.log
+open_5g_vht80_ch36_hidden__A_sta_B_ap FAIL   wlxf695c8aae435    wlp58s0            NA           rc=1           /tmp/sta_ap_role_logs/open_5g_vht80_ch36_hidden__A_sta_B_ap.log
+owe_5g_vht80_ch149__A_sta_B_ap     PASS   wlxf695c8aae435    wlp58s0            172.00       rc=0           /tmp/sta_ap_role_logs/owe_5g_vht80_ch149__A_sta_B_ap.log
+open_2g_ht20_ch6__A_sta_B_ap       PASS   wlxf695c8aae435    wlp58s0            36.80        rc=0           /tmp/sta_ap_role_logs/open_2g_ht20_ch6__A_sta_B_ap.log
+wpa2_2g_ht20_ch6__A_sta_B_ap       PASS   wlxf695c8aae435    wlp58s0            39.10        rc=0           /tmp/sta_ap_role_logs/wpa2_2g_ht20_ch6__A_sta_B_ap.log
+owe_2g_ht20_ch6__A_sta_B_ap        PASS   wlxf695c8aae435    wlp58s0            40.70        rc=0           /tmp/sta_ap_role_logs/owe_2g_ht20_ch6__A_sta_B_ap.log
+open_5g_he80_ch36__A_sta_B_ap      PASS   wlxf695c8aae435    wlp58s0            255.00       rc=0           /tmp/sta_ap_role_logs/open_5g_he80_ch36__A_sta_B_ap.log
+wpa2_5g_he80_ch36__A_sta_B_ap      PASS   wlxf695c8aae435    wlp58s0            248.00       rc=0           /tmp/sta_ap_role_logs/wpa2_5g_he80_ch36__A_sta_B_ap.log
+wpa3_5g_he80_ch36__A_sta_B_ap      PASS   wlxf695c8aae435    wlp58s0            255.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_he80_ch36__A_sta_B_ap.log
+owe_5g_he80_ch36__A_sta_B_ap       PASS   wlxf695c8aae435    wlp58s0            252.00       rc=0           /tmp/sta_ap_role_logs/owe_5g_he80_ch36__A_sta_B_ap.log
+open_2g_he20_ch6__A_sta_B_ap       PASS   wlxf695c8aae435    wlp58s0            59.60        rc=0           /tmp/sta_ap_role_logs/open_2g_he20_ch6__A_sta_B_ap.log
+wpa2_2g_he20_ch6__A_sta_B_ap       PASS   wlxf695c8aae435    wlp58s0            57.30        rc=0           /tmp/sta_ap_role_logs/wpa2_2g_he20_ch6__A_sta_B_ap.log
+owe_2g_he20_ch6__A_sta_B_ap        PASS   wlxf695c8aae435    wlp58s0            54.30        rc=0           /tmp/sta_ap_role_logs/owe_2g_he20_ch6__A_sta_B_ap.log
+wpa3_2g_he20_ch6__A_sta_B_ap       PASS   wlxf695c8aae435    wlp58s0            56.00        rc=0           /tmp/sta_ap_role_logs/wpa3_2g_he20_ch6__A_sta_B_ap.log
+open_5g_he80_ch149__A_sta_B_ap     PASS   wlxf695c8aae435    wlp58s0            297.00       rc=0           /tmp/sta_ap_role_logs/open_5g_he80_ch149__A_sta_B_ap.log
+wpa2_5g_he80_ch149__A_sta_B_ap     PASS   wlxf695c8aae435    wlp58s0            296.00       rc=0           /tmp/sta_ap_role_logs/wpa2_5g_he80_ch149__A_sta_B_ap.log
+wpa3_5g_he80_ch149__A_sta_B_ap     PASS   wlxf695c8aae435    wlp58s0            295.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_he80_ch149__A_sta_B_ap.log
+owe_5g_he80_ch149__A_sta_B_ap      PASS   wlxf695c8aae435    wlp58s0            295.00       rc=0           /tmp/sta_ap_role_logs/owe_5g_he80_ch149__A_sta_B_ap.log
+wpa2wpa3_5g_he80_ch36_transition__A_sta_B_ap PASS   wlxf695c8aae435    wlp58s0            241.00       rc=0           /tmp/sta_ap_role_logs/wpa2wpa3_5g_he80_ch36_transition__A_sta_B_ap.log
+wpa2wpa3_5g_he80_ch149_transition__A_sta_B_ap PASS   wlxf695c8aae435    wlp58s0            296.00       rc=0           /tmp/sta_ap_role_logs/wpa2wpa3_5g_he80_ch149_transition__A_sta_B_ap.log
+
+Total : 25
+PASS  : 24
+FAIL  : 1
+Logs  : /tmp/sta_ap_role_logs
+
+================ FINAL SUMMARY ================
+A = wlxf695c8aae435 (7902u)
+B = wlp58s0  (mt7927e)
+
+CASE                               RES    STA_IF             AP_IF              THR(Mbps)    INFO           LOG
+---------------------------------- ------ ------------------ ------------------ ------------ -------------- ------------------------------
+open_5g__A_sta_B_ap                FAIL   wlxf695c8aae435    wlp58s0            NA           rc=1           /tmp/sta_ap_role_logs/open_5g__A_sta_B_ap.log
+wpa3_5g_ht20_ch36__A_sta_B_ap      PASS   wlxf695c8aae435    wlp58s0            47.70        rc=0           /tmp/sta_ap_role_logs/wpa3_5g_ht20_ch36__A_sta_B_ap.log
+open_5g_vht80_ch36__A_sta_B_ap     PASS   wlxf695c8aae435    wlp58s0            157.00       rc=0           /tmp/sta_ap_role_logs/open_5g_vht80_ch36__A_sta_B_ap.log
+wpa2_5g_vht80_ch36__A_sta_B_ap     PASS   wlxf695c8aae435    wlp58s0            147.00       rc=0           /tmp/sta_ap_role_logs/wpa2_5g_vht80_ch36__A_sta_B_ap.log
+
+
+================ FINAL SUMMARY ================
+A = wlp58s0  (mt7927e)
+B = wlxf695c8aae435 (mt7902u)
+
+CASE                               RES    STA_IF             AP_IF              THR(Mbps)    INFO           LOG
+---------------------------------- ------ ------------------ ------------------ ------------ -------------- ------------------------------
+open_5g__A_sta_B_ap                PASS   wlp58s0            wlxf695c8aae435    41.00        rc=0           /tmp/sta_ap_role_logs/open_5g__A_sta_B_ap.log
+wpa3_5g_ht20_ch36__A_sta_B_ap      PASS   wlp58s0            wlxf695c8aae435    50.70        rc=0           /tmp/sta_ap_role_logs/wpa3_5g_ht20_ch36__A_sta_B_ap.log
+open_5g_vht80_ch36__A_sta_B_ap     PASS   wlp58s0            wlxf695c8aae435    9.64         rc=0           /tmp/sta_ap_role_logs/open_5g_vht80_ch36__A_sta_B_ap.log
+wpa2_5g_vht80_ch36__A_sta_B_ap     PASS   wlp58s0            wlxf695c8aae435    9.53         rc=0           /tmp/sta_ap_role_logs/wpa2_5g_vht80_ch36__A_sta_B_ap.log
+wpa3_5g_vht80_ch36__A_sta_B_ap     PASS   wlp58s0            wlxf695c8aae435    9.53         rc=0           /tmp/sta_ap_role_logs/wpa3_5g_vht80_ch36__A_sta_B_ap.log
+wpa2wpa3_5g_vht80_ch36_transition__A_sta_B_ap PASS   wlp58s0            wlxf695c8aae435    9.53         rc=0           /tmp/sta_ap_role_logs/wpa2wpa3_5g_vht80_ch36_transition__A_sta_B_ap.log
+owe_5g_vht80_ch36__A_sta_B_ap      PASS   wlp58s0            wlxf695c8aae435    9.52         rc=0           /tmp/sta_ap_role_logs/owe_5g_vht80_ch36__A_sta_B_ap.log
+open_5g_vht80_ch149__A_sta_B_ap    PASS   wlp58s0            wlxf695c8aae435    10.70        rc=0           /tmp/sta_ap_role_logs/open_5g_vht80_ch149__A_sta_B_ap.log
+wpa2_5g_vht80_ch149__A_sta_B_ap    PASS   wlp58s0            wlxf695c8aae435    10.60        rc=0           /tmp/sta_ap_role_logs/wpa2_5g_vht80_ch149__A_sta_B_ap.log
+wpa3_5g_vht80_ch149__A_sta_B_ap    PASS   wlp58s0            wlxf695c8aae435    10.60        rc=0           /tmp/sta_ap_role_logs/wpa3_5g_vht80_ch149__A_sta_B_ap.log
+open_5g_vht80_ch36_hidden__A_sta_B_ap FAIL   wlp58s0            wlxf695c8aae435    NA           rc=1           /tmp/sta_ap_role_logs/open_5g_vht80_ch36_hidden__A_sta_B_ap.log
+owe_5g_vht80_ch149__A_sta_B_ap     PASS   wlp58s0            wlxf695c8aae435    10.70        rc=0           /tmp/sta_ap_role_logs/owe_5g_vht80_ch149__A_sta_B_ap.log
+open_2g_ht20_ch6__A_sta_B_ap       PASS   wlp58s0            wlxf695c8aae435    48.50        rc=0           /tmp/sta_ap_role_logs/open_2g_ht20_ch6__A_sta_B_ap.log
+wpa2_2g_ht20_ch6__A_sta_B_ap       PASS   wlp58s0            wlxf695c8aae435    48.70        rc=0           /tmp/sta_ap_role_logs/wpa2_2g_ht20_ch6__A_sta_B_ap.log
+owe_2g_ht20_ch6__A_sta_B_ap        PASS   wlp58s0            wlxf695c8aae435    48.50        rc=0           /tmp/sta_ap_role_logs/owe_2g_ht20_ch6__A_sta_B_ap.log
+open_5g_he80_ch36__A_sta_B_ap      PASS   wlp58s0            wlxf695c8aae435    215.00       rc=0           /tmp/sta_ap_role_logs/open_5g_he80_ch36__A_sta_B_ap.log
+wpa2_5g_he80_ch36__A_sta_B_ap      PASS   wlp58s0            wlxf695c8aae435    233.00       rc=0           /tmp/sta_ap_role_logs/wpa2_5g_he80_ch36__A_sta_B_ap.log
+wpa3_5g_he80_ch36__A_sta_B_ap      PASS   wlp58s0            wlxf695c8aae435    240.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_he80_ch36__A_sta_B_ap.log
+owe_5g_he80_ch36__A_sta_B_ap       PASS   wlp58s0            wlxf695c8aae435    232.00       rc=0           /tmp/sta_ap_role_logs/owe_5g_he80_ch36__A_sta_B_ap.log
+open_2g_he20_ch6__A_sta_B_ap       PASS   wlp58s0            wlxf695c8aae435    71.80        rc=0           /tmp/sta_ap_role_logs/open_2g_he20_ch6__A_sta_B_ap.log
+wpa2_2g_he20_ch6__A_sta_B_ap       PASS   wlp58s0            wlxf695c8aae435    74.20        rc=0           /tmp/sta_ap_role_logs/wpa2_2g_he20_ch6__A_sta_B_ap.log
+owe_2g_he20_ch6__A_sta_B_ap        PASS   wlp58s0            wlxf695c8aae435    73.70        rc=0           /tmp/sta_ap_role_logs/owe_2g_he20_ch6__A_sta_B_ap.log
+wpa3_2g_he20_ch6__A_sta_B_ap       PASS   wlp58s0            wlxf695c8aae435    77.80        rc=0           /tmp/sta_ap_role_logs/wpa3_2g_he20_ch6__A_sta_B_ap.log
+open_5g_he80_ch149__A_sta_B_ap     PASS   wlp58s0            wlxf695c8aae435    263.00       rc=0           /tmp/sta_ap_role_logs/open_5g_he80_ch149__A_sta_B_ap.log
+wpa2_5g_he80_ch149__A_sta_B_ap     PASS   wlp58s0            wlxf695c8aae435    256.00       rc=0           /tmp/sta_ap_role_logs/wpa2_5g_he80_ch149__A_sta_B_ap.log
+wpa3_5g_he80_ch149__A_sta_B_ap     PASS   wlp58s0            wlxf695c8aae435    260.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_he80_ch149__A_sta_B_ap.log
+owe_5g_he80_ch149__A_sta_B_ap      PASS   wlp58s0            wlxf695c8aae435    260.00       rc=0           /tmp/sta_ap_role_logs/owe_5g_he80_ch149__A_sta_B_ap.log
+wpa2wpa3_5g_he80_ch36_transition__A_sta_B_ap PASS   wlp58s0            wlxf695c8aae435    241.00       rc=0           /tmp/sta_ap_role_logs/wpa2wpa3_5g_he80_ch36_transition__A_sta_B_ap.log
+wpa2wpa3_5g_he80_ch149_transition__A_sta_B_ap PASS   wlp58s0            wlxf695c8aae435    261.00       rc=0           /tmp/sta_ap_role_logs/wpa2wpa3_5g_he80_ch149_transition__A_sta_B_ap.log
+
+Total : 29
+PASS  : 28
+FAIL  : 1
+
+
+================ FINAL SUMMARY ================
+A = wlp58s0 (mt7927e)
+B = wlxf695c8aae435 (mt7902u)
+
+CASE                               RES    STA_IF             AP_IF              THR(Mbps)    INFO           LOG
+---------------------------------- ------ ------------------ ------------------ ------------ -------------- ------------------------------
+wpa3_5g_ht20_ch36__A_sta_B_ap      PASS   wlp58s0            wlxf695c8aae435    50.20        rc=0           /tmp/sta_ap_role_logs/wpa3_5g_ht20_ch36__A_sta_B_ap.log
+open_5g_vht80_ch36__A_sta_B_ap     PASS   wlp58s0            wlxf695c8aae435    9.73         rc=0           /tmp/sta_ap_role_logs/open_5g_vht80_ch36__A_sta_B_ap.log
+wpa2_5g_vht80_ch36__A_sta_B_ap     PASS   wlp58s0            wlxf695c8aae435    9.64         rc=0           /tmp/sta_ap_role_logs/wpa2_5g_vht80_ch36__A_sta_B_ap.log
+wpa3_5g_vht80_ch36__A_sta_B_ap     PASS   wlp58s0            wlxf695c8aae435    9.53         rc=0           /tmp/sta_ap_role_logs/wpa3_5g_vht80_ch36__A_sta_B_ap.log
+wpa2wpa3_5g_vht80_ch36_transition__A_sta_B_ap PASS   wlp58s0            wlxf695c8aae435    9.63         rc=0           /tmp/sta_ap_role_logs/wpa2wpa3_5g_vht80_ch36_transition__A_sta_B_ap.log
+owe_5g_vht80_ch36__A_sta_B_ap      PASS   wlp58s0            wlxf695c8aae435    9.63         rc=0           /tmp/sta_ap_role_logs/owe_5g_vht80_ch36__A_sta_B_ap.log
+open_5g_vht80_ch149__A_sta_B_ap    PASS   wlp58s0            wlxf695c8aae435    10.70        rc=0           /tmp/sta_ap_role_logs/open_5g_vht80_ch149__A_sta_B_ap.log
+wpa2_5g_vht80_ch149__A_sta_B_ap    PASS   wlp58s0            wlxf695c8aae435    10.60        rc=0           /tmp/sta_ap_role_logs/wpa2_5g_vht80_ch149__A_sta_B_ap.log
+wpa3_5g_vht80_ch149__A_sta_B_ap    PASS   wlp58s0            wlxf695c8aae435    10.60        rc=0           /tmp/sta_ap_role_logs/wpa3_5g_vht80_ch149__A_sta_B_ap.log
+open_5g_vht80_ch36_hidden__A_sta_B_ap FAIL   wlp58s0            wlxf695c8aae435    NA           rc=1           /tmp/sta_ap_role_logs/open_5g_vht80_ch36_hidden__A_sta_B_ap.log
+owe_5g_vht80_ch149__A_sta_B_ap     PASS   wlp58s0            wlxf695c8aae435    10.60        rc=0           /tmp/sta_ap_role_logs/owe_5g_vht80_ch149__A_sta_B_ap.log
+
+Total : 11
+PASS  : 10
+FAIL  : 1
+Logs  : /tmp/sta_ap_role_logs
+
+
+================ FINAL SUMMARY ================
+A = wlx000c43baabd4 (mt7927u)
+B = wlp58s0 (mt7920u)
+
+CASE                               RES    STA_IF             AP_IF              THR(Mbps)    INFO           LOG
+---------------------------------- ------ ------------------ ------------------ ------------ -------------- ------------------------------
+wpa3_5g_ht20_ch36__A_sta_B_ap      PASS   wlx000c43baabd4    wlp58s0            104.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_ht20_ch36__A_sta_B_ap.log
+open_5g_vht80_ch36__A_sta_B_ap     PASS   wlx000c43baabd4    wlp58s0            296.00       rc=0           /tmp/sta_ap_role_logs/open_5g_vht80_ch36__A_sta_B_ap.log
+wpa2_5g_vht80_ch36__A_sta_B_ap     PASS   wlx000c43baabd4    wlp58s0            296.00       rc=0           /tmp/sta_ap_role_logs/wpa2_5g_vht80_ch36__A_sta_B_ap.log
+wpa3_5g_vht80_ch36__A_sta_B_ap     PASS   wlx000c43baabd4    wlp58s0            294.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_vht80_ch36__A_sta_B_ap.log
+wpa2wpa3_5g_vht80_ch36_transition__A_sta_B_ap PASS   wlx000c43baabd4    wlp58s0            296.00       rc=0           /tmp/sta_ap_role_logs/wpa2wpa3_5g_vht80_ch36_transition__A_sta_B_ap.log
+owe_5g_vht80_ch36__A_sta_B_ap      PASS   wlx000c43baabd4    wlp58s0            295.00       rc=0           /tmp/sta_ap_role_logs/owe_5g_vht80_ch36__A_sta_B_ap.log
+open_5g_vht80_ch149__A_sta_B_ap    PASS   wlx000c43baabd4    wlp58s0            295.00       rc=0           /tmp/sta_ap_role_logs/open_5g_vht80_ch149__A_sta_B_ap.log
+wpa2_5g_vht80_ch149__A_sta_B_ap    PASS   wlx000c43baabd4    wlp58s0            296.00       rc=0           /tmp/sta_ap_role_logs/wpa2_5g_vht80_ch149__A_sta_B_ap.log
+wpa3_5g_vht80_ch149__A_sta_B_ap    PASS   wlx000c43baabd4    wlp58s0            296.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_vht80_ch149__A_sta_B_ap.log
+open_5g_vht80_ch36_hidden__A_sta_B_ap FAIL   wlx000c43baabd4    wlp58s0            NA           rc=1           /tmp/sta_ap_role_logs/open_5g_vht80_ch36_hidden__A_sta_B_ap.log
+owe_5g_vht80_ch149__A_sta_B_ap     PASS   wlx000c43baabd4    wlp58s0            296.00       rc=0           /tmp/sta_ap_role_logs/owe_5g_vht80_ch149__A_sta_B_ap.log
+
+Total : 11
+PASS  : 10
+FAIL  : 1
+Logs  : /tmp/sta_ap_role_logs
+
+================ FINAL SUMMARY ================
+A = wlx000c43baabd4 (mt7927u)
+B = wlp58s0 (mt7927e)
+
+CASE                               RES    STA_IF             AP_IF              THR(Mbps)    INFO           LOG
+---------------------------------- ------ ------------------ ------------------ ------------ -------------- ------------------------------
+open_2g_ht20_ch6__A_sta_B_ap       PASS   wlx000c43baabd4    wlp58s0            87.80        rc=0           /tmp/sta_ap_role_logs/open_2g_ht20_ch6__A_sta_B_ap.log
+wpa2_2g_ht20_ch6__A_sta_B_ap       PASS   wlx000c43baabd4    wlp58s0            86.50        rc=0           /tmp/sta_ap_role_logs/wpa2_2g_ht20_ch6__A_sta_B_ap.log
+owe_2g_ht20_ch6__A_sta_B_ap        PASS   wlx000c43baabd4    wlp58s0            88.10        rc=0           /tmp/sta_ap_role_logs/owe_2g_ht20_ch6__A_sta_B_ap.log
+open_5g_he80_ch36__A_sta_B_ap      PASS   wlx000c43baabd4    wlp58s0            295.00       rc=0           /tmp/sta_ap_role_logs/open_5g_he80_ch36__A_sta_B_ap.log
+wpa2_5g_he80_ch36__A_sta_B_ap      PASS   wlx000c43baabd4    wlp58s0            295.00       rc=0           /tmp/sta_ap_role_logs/wpa2_5g_he80_ch36__A_sta_B_ap.log
+wpa3_5g_he80_ch36__A_sta_B_ap      PASS   wlx000c43baabd4    wlp58s0            296.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_he80_ch36__A_sta_B_ap.log
+owe_5g_he80_ch36__A_sta_B_ap       PASS   wlx000c43baabd4    wlp58s0            295.00       rc=0           /tmp/sta_ap_role_logs/owe_5g_he80_ch36__A_sta_B_ap.log
+open_2g_he20_ch6__A_sta_B_ap       PASS   wlx000c43baabd4    wlp58s0            183.00       rc=0           /tmp/sta_ap_role_logs/open_2g_he20_ch6__A_sta_B_ap.log
+wpa2_2g_he20_ch6__A_sta_B_ap       PASS   wlx000c43baabd4    wlp58s0            172.00       rc=0           /tmp/sta_ap_role_logs/wpa2_2g_he20_ch6__A_sta_B_ap.log
+owe_2g_he20_ch6__A_sta_B_ap        PASS   wlx000c43baabd4    wlp58s0            178.00       rc=0           /tmp/sta_ap_role_logs/owe_2g_he20_ch6__A_sta_B_ap.log
+wpa3_2g_he20_ch6__A_sta_B_ap       PASS   wlx000c43baabd4    wlp58s0            175.00       rc=0           /tmp/sta_ap_role_logs/wpa3_2g_he20_ch6__A_sta_B_ap.log
+open_5g_he80_ch149__A_sta_B_ap     PASS   wlx000c43baabd4    wlp58s0            295.00       rc=0           /tmp/sta_ap_role_logs/open_5g_he80_ch149__A_sta_B_ap.log
+wpa2_5g_he80_ch149__A_sta_B_ap     PASS   wlx000c43baabd4    wlp58s0            293.00       rc=0           /tmp/sta_ap_role_logs/wpa2_5g_he80_ch149__A_sta_B_ap.log
+wpa3_5g_he80_ch149__A_sta_B_ap     PASS   wlx000c43baabd4    wlp58s0            296.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_he80_ch149__A_sta_B_ap.log
+owe_5g_he80_ch149__A_sta_B_ap      PASS   wlx000c43baabd4    wlp58s0            296.00       rc=0           /tmp/sta_ap_role_logs/owe_5g_he80_ch149__A_sta_B_ap.log
+wpa2wpa3_5g_he80_ch36_transition__A_sta_B_ap PASS   wlx000c43baabd4    wlp58s0            295.00       rc=0           /tmp/sta_ap_role_logs/wpa2wpa3_5g_he80_ch36_transition__A_sta_B_ap.log
+wpa2wpa3_5g_he80_ch149_transition__A_sta_B_ap PASS   wlx000c43baabd4    wlp58s0            296.00       rc=0           /tmp/sta_ap_role_logs/wpa2wpa3_5g_he80_ch149_transition__A_sta_B_ap.log
+
+Total : 17
+PASS  : 17
+FAIL  : 0
+
+================ FINAL SUMMARY ================
+A = wlp58s0  (mt7927e)
+B = wlx000c43baabd4 (mt7927u)
+
+CASE                               RES    STA_IF             AP_IF              THR(Mbps)    INFO           LOG
+---------------------------------- ------ ------------------ ------------------ ------------ -------------- ------------------------------
+open_5g__A_sta_B_ap                PASS   wlp58s0            wlx000c43baabd4    118.00       rc=0           /tmp/sta_ap_role_logs/open_5g__A_sta_B_ap.log
+wpa3_5g_ht20_ch36__A_sta_B_ap      PASS   wlp58s0            wlx000c43baabd4    103.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_ht20_ch36__A_sta_B_ap.log
+open_5g_vht80_ch36__A_sta_B_ap     PASS   wlp58s0            wlx000c43baabd4    240.00       rc=0           /tmp/sta_ap_role_logs/open_5g_vht80_ch36__A_sta_B_ap.log
+wpa2_5g_vht80_ch36__A_sta_B_ap     PASS   wlp58s0            wlx000c43baabd4    241.00       rc=0           /tmp/sta_ap_role_logs/wpa2_5g_vht80_ch36__A_sta_B_ap.log
+wpa3_5g_vht80_ch36__A_sta_B_ap     PASS   wlp58s0            wlx000c43baabd4    241.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_vht80_ch36__A_sta_B_ap.log
+wpa2wpa3_5g_vht80_ch36_transition__A_sta_B_ap PASS   wlp58s0            wlx000c43baabd4    238.00       rc=0           /tmp/sta_ap_role_logs/wpa2wpa3_5g_vht80_ch36_transition__A_sta_B_ap.log
+owe_5g_vht80_ch36__A_sta_B_ap      PASS   wlp58s0            wlx000c43baabd4    227.00       rc=0           /tmp/sta_ap_role_logs/owe_5g_vht80_ch36__A_sta_B_ap.log
+open_5g_vht80_ch149__A_sta_B_ap    PASS   wlp58s0            wlx000c43baabd4    250.00       rc=0           /tmp/sta_ap_role_logs/open_5g_vht80_ch149__A_sta_B_ap.log
+wpa2_5g_vht80_ch149__A_sta_B_ap    PASS   wlp58s0            wlx000c43baabd4    243.00       rc=0           /tmp/sta_ap_role_logs/wpa2_5g_vht80_ch149__A_sta_B_ap.log
+wpa3_5g_vht80_ch149__A_sta_B_ap    PASS   wlp58s0            wlx000c43baabd4    254.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_vht80_ch149__A_sta_B_ap.log
+open_5g_vht80_ch36_hidden__A_sta_B_ap FAIL   wlp58s0            wlx000c43baabd4    NA           rc=1           /tmp/sta_ap_role_logs/open_5g_vht80_ch36_hidden__A_sta_B_ap.log
+owe_5g_vht80_ch149__A_sta_B_ap     PASS   wlp58s0            wlx000c43baabd4    258.00       rc=0           /tmp/sta_ap_role_logs/owe_5g_vht80_ch149__A_sta_B_ap.log
+open_2g_ht20_ch6__A_sta_B_ap       PASS   wlp58s0            wlx000c43baabd4    86.00        rc=0           /tmp/sta_ap_role_logs/open_2g_ht20_ch6__A_sta_B_ap.log
+wpa2_2g_ht20_ch6__A_sta_B_ap       PASS   wlp58s0            wlx000c43baabd4    87.60        rc=0           /tmp/sta_ap_role_logs/wpa2_2g_ht20_ch6__A_sta_B_ap.log
+owe_2g_ht20_ch6__A_sta_B_ap        PASS   wlp58s0            wlx000c43baabd4    87.30        rc=0           /tmp/sta_ap_role_logs/owe_2g_ht20_ch6__A_sta_B_ap.log
+open_5g_he80_ch36__A_sta_B_ap      PASS   wlp58s0            wlx000c43baabd4    246.00       rc=0           /tmp/sta_ap_role_logs/open_5g_he80_ch36__A_sta_B_ap.log
+wpa2_5g_he80_ch36__A_sta_B_ap      PASS   wlp58s0            wlx000c43baabd4    254.00       rc=0           /tmp/sta_ap_role_logs/wpa2_5g_he80_ch36__A_sta_B_ap.log
+wpa3_5g_he80_ch36__A_sta_B_ap      PASS   wlp58s0            wlx000c43baabd4    244.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_he80_ch36__A_sta_B_ap.log
+owe_5g_he80_ch36__A_sta_B_ap       PASS   wlp58s0            wlx000c43baabd4    244.00       rc=0           /tmp/sta_ap_role_logs/owe_5g_he80_ch36__A_sta_B_ap.log
+open_2g_he20_ch6__A_sta_B_ap       PASS   wlp58s0            wlx000c43baabd4    150.00       rc=0           /tmp/sta_ap_role_logs/open_2g_he20_ch6__A_sta_B_ap.log
+wpa2_2g_he20_ch6__A_sta_B_ap       PASS   wlp58s0            wlx000c43baabd4    152.00       rc=0           /tmp/sta_ap_role_logs/wpa2_2g_he20_ch6__A_sta_B_ap.log
+owe_2g_he20_ch6__A_sta_B_ap        PASS   wlp58s0            wlx000c43baabd4    148.00       rc=0           /tmp/sta_ap_role_logs/owe_2g_he20_ch6__A_sta_B_ap.log
+wpa3_2g_he20_ch6__A_sta_B_ap       PASS   wlp58s0            wlx000c43baabd4    155.00       rc=0           /tmp/sta_ap_role_logs/wpa3_2g_he20_ch6__A_sta_B_ap.log
+open_5g_he80_ch149__A_sta_B_ap     PASS   wlp58s0            wlx000c43baabd4    250.00       rc=0           /tmp/sta_ap_role_logs/open_5g_he80_ch149__A_sta_B_ap.log
+wpa2_5g_he80_ch149__A_sta_B_ap     PASS   wlp58s0            wlx000c43baabd4    255.00       rc=0           /tmp/sta_ap_role_logs/wpa2_5g_he80_ch149__A_sta_B_ap.log
+wpa3_5g_he80_ch149__A_sta_B_ap     PASS   wlp58s0            wlx000c43baabd4    255.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_he80_ch149__A_sta_B_ap.log
+owe_5g_he80_ch149__A_sta_B_ap      PASS   wlp58s0            wlx000c43baabd4    249.00       rc=0           /tmp/sta_ap_role_logs/owe_5g_he80_ch149__A_sta_B_ap.log
+wpa2wpa3_5g_he80_ch36_transition__A_sta_B_ap PASS   wlp58s0            wlx000c43baabd4    237.00       rc=0           /tmp/sta_ap_role_logs/wpa2wpa3_5g_he80_ch36_transition__A_sta_B_ap.log
+wpa2wpa3_5g_he80_ch149_transition__A_sta_B_ap PASS   wlp58s0            wlx000c43baabd4    254.00       rc=0           /tmp/sta_ap_role_logs/wpa2wpa3_5g_he80_ch149_transition__A_sta_B_ap.log
+
+Total : 29
+PASS  : 28
+FAIL  : 1
+Logs  : /tmp/sta_ap_role_logs
+
+
+================ FINAL SUMMARY ================
+A = wlx000c43baabd4 (mt7927u)
+B = wlp58s0	(mt7927e)
+
+CASE                               RES    STA_IF             AP_IF              THR(Mbps)    INFO           LOG
+---------------------------------- ------ ------------------ ------------------ ------------ -------------- ------------------------------
+open_5g__A_sta_B_ap                PASS   wlx000c43baabd4    wlp58s0            123.00       rc=0           /tmp/sta_ap_role_logs/open_5g__A_sta_B_ap.log
+wpa3_5g_ht20_ch36__A_sta_B_ap      PASS   wlx000c43baabd4    wlp58s0            104.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_ht20_ch36__A_sta_B_ap.log
+open_5g_vht80_ch36__A_sta_B_ap     PASS   wlx000c43baabd4    wlp58s0            296.00       rc=0           /tmp/sta_ap_role_logs/open_5g_vht80_ch36__A_sta_B_ap.log
+wpa2_5g_vht80_ch36__A_sta_B_ap     PASS   wlx000c43baabd4    wlp58s0            296.00       rc=0           /tmp/sta_ap_role_logs/wpa2_5g_vht80_ch36__A_sta_B_ap.log
+wpa3_5g_vht80_ch36__A_sta_B_ap     PASS   wlx000c43baabd4    wlp58s0            296.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_vht80_ch36__A_sta_B_ap.log
+wpa2wpa3_5g_vht80_ch36_transition__A_sta_B_ap PASS   wlx000c43baabd4    wlp58s0            296.00       rc=0           /tmp/sta_ap_role_logs/wpa2wpa3_5g_vht80_ch36_transition__A_sta_B_ap.log
+owe_5g_vht80_ch36__A_sta_B_ap      PASS   wlx000c43baabd4    wlp58s0            296.00       rc=0           /tmp/sta_ap_role_logs/owe_5g_vht80_ch36__A_sta_B_ap.log
+open_5g_vht80_ch149__A_sta_B_ap    PASS   wlx000c43baabd4    wlp58s0            297.00       rc=0           /tmp/sta_ap_role_logs/open_5g_vht80_ch149__A_sta_B_ap.log
+wpa2_5g_vht80_ch149__A_sta_B_ap    PASS   wlx000c43baabd4    wlp58s0            295.00       rc=0           /tmp/sta_ap_role_logs/wpa2_5g_vht80_ch149__A_sta_B_ap.log
+wpa3_5g_vht80_ch149__A_sta_B_ap    PASS   wlx000c43baabd4    wlp58s0            297.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_vht80_ch149__A_sta_B_ap.log
+open_5g_vht80_ch36_hidden__A_sta_B_ap FAIL   wlx000c43baabd4    wlp58s0            NA           rc=1           /tmp/sta_ap_role_logs/open_5g_vht80_ch36_hidden__A_sta_B_ap.log
+owe_5g_vht80_ch149__A_sta_B_ap     PASS   wlx000c43baabd4    wlp58s0            284.00       rc=0           /tmp/sta_ap_role_logs/owe_5g_vht80_ch149__A_sta_B_ap.log
+open_2g_ht20_ch6__A_sta_B_ap       PASS   wlx000c43baabd4    wlp58s0            80.80        rc=0           /tmp/sta_ap_role_logs/open_2g_ht20_ch6__A_sta_B_ap.log
+wpa2_2g_ht20_ch6__A_sta_B_ap       PASS   wlx000c43baabd4    wlp58s0            85.80        rc=0           /tmp/sta_ap_role_logs/wpa2_2g_ht20_ch6__A_sta_B_ap.log
+owe_2g_ht20_ch6__A_sta_B_ap        PASS   wlx000c43baabd4    wlp58s0            87.20        rc=0           /tmp/sta_ap_role_logs/owe_2g_ht20_ch6__A_sta_B_ap.log
+open_5g_he80_ch36__A_sta_B_ap      PASS   wlx000c43baabd4    wlp58s0            297.00       rc=0           /tmp/sta_ap_role_logs/open_5g_he80_ch36__A_sta_B_ap.log
+wpa2_5g_he80_ch36__A_sta_B_ap      PASS   wlx000c43baabd4    wlp58s0            295.00       rc=0           /tmp/sta_ap_role_logs/wpa2_5g_he80_ch36__A_sta_B_ap.log
+wpa3_5g_he80_ch36__A_sta_B_ap      PASS   wlx000c43baabd4    wlp58s0            295.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_he80_ch36__A_sta_B_ap.log
+owe_5g_he80_ch36__A_sta_B_ap       PASS   wlx000c43baabd4    wlp58s0            295.00       rc=0           /tmp/sta_ap_role_logs/owe_5g_he80_ch36__A_sta_B_ap.log
+open_2g_he20_ch6__A_sta_B_ap       PASS   wlx000c43baabd4    wlp58s0            174.00       rc=0           /tmp/sta_ap_role_logs/open_2g_he20_ch6__A_sta_B_ap.log
+wpa2_2g_he20_ch6__A_sta_B_ap       PASS   wlx000c43baabd4    wlp58s0            174.00       rc=0           /tmp/sta_ap_role_logs/wpa2_2g_he20_ch6__A_sta_B_ap.log
+owe_2g_he20_ch6__A_sta_B_ap        PASS   wlx000c43baabd4    wlp58s0            166.00       rc=0           /tmp/sta_ap_role_logs/owe_2g_he20_ch6__A_sta_B_ap.log
+wpa3_2g_he20_ch6__A_sta_B_ap       PASS   wlx000c43baabd4    wlp58s0            172.00       rc=0           /tmp/sta_ap_role_logs/wpa3_2g_he20_ch6__A_sta_B_ap.log
+open_5g_he80_ch149__A_sta_B_ap     PASS   wlx000c43baabd4    wlp58s0            177.00       rc=0           /tmp/sta_ap_role_logs/open_5g_he80_ch149__A_sta_B_ap.log
+wpa2_5g_he80_ch149__A_sta_B_ap     PASS   wlx000c43baabd4    wlp58s0            189.00       rc=0           /tmp/sta_ap_role_logs/wpa2_5g_he80_ch149__A_sta_B_ap.log
+wpa3_5g_he80_ch149__A_sta_B_ap     PASS   wlx000c43baabd4    wlp58s0            157.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_he80_ch149__A_sta_B_ap.log
+owe_5g_he80_ch149__A_sta_B_ap      PASS   wlx000c43baabd4    wlp58s0            149.00       rc=0           /tmp/sta_ap_role_logs/owe_5g_he80_ch149__A_sta_B_ap.log
+wpa2wpa3_5g_he80_ch36_transition__A_sta_B_ap PASS   wlx000c43baabd4    wlp58s0            295.00       rc=0           /tmp/sta_ap_role_logs/wpa2wpa3_5g_he80_ch36_transition__A_sta_B_ap.log
+wpa2wpa3_5g_he80_ch149_transition__A_sta_B_ap PASS   wlx000c43baabd4    wlp58s0            204.00       rc=0           /tmp/sta_ap_role_logs/wpa2wpa3_5g_he80_ch149_transition__A_sta_B_ap.log
+
+
+================ FINAL SUMMARY ================
+Total : 29
+PASS  : 28
+FAIL  : 1
+Logs  : /tmp/sta_ap_role_logs
+
+A = wlx000c433a3348 (mt7921u)
+B = wlp58s0 (mt7927e)
+
+CASE                               RES    STA_IF             AP_IF              THR(Mbps)    INFO           LOG
+---------------------------------- ------ ------------------ ------------------ ------------ -------------- ------------------------------
+open_5g__A_sta_B_ap                PASS   wlx000c433a3348    wlp58s0            122.00       rc=0           /tmp/sta_ap_role_logs/open_5g__A_sta_B_ap.log
+wpa3_5g_ht20_ch36__A_sta_B_ap      PASS   wlx000c433a3348    wlp58s0            104.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_ht20_ch36__A_sta_B_ap.log
+open_5g_vht80_ch36__A_sta_B_ap     PASS   wlx000c433a3348    wlp58s0            438.00       rc=0           /tmp/sta_ap_role_logs/open_5g_vht80_ch36__A_sta_B_ap.log
+wpa2_5g_vht80_ch36__A_sta_B_ap     PASS   wlx000c433a3348    wlp58s0            411.00       rc=0           /tmp/sta_ap_role_logs/wpa2_5g_vht80_ch36__A_sta_B_ap.log
+wpa3_5g_vht80_ch36__A_sta_B_ap     PASS   wlx000c433a3348    wlp58s0            439.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_vht80_ch36__A_sta_B_ap.log
+wpa2wpa3_5g_vht80_ch36_transition__A_sta_B_ap PASS   wlx000c433a3348    wlp58s0            423.00       rc=0           /tmp/sta_ap_role_logs/wpa2wpa3_5g_vht80_ch36_transition__A_sta_B_ap.log
+owe_5g_vht80_ch36__A_sta_B_ap      PASS   wlx000c433a3348    wlp58s0            386.00       rc=0           /tmp/sta_ap_role_logs/owe_5g_vht80_ch36__A_sta_B_ap.log
+open_5g_vht80_ch149__A_sta_B_ap    PASS   wlx000c433a3348    wlp58s0            414.00       rc=0           /tmp/sta_ap_role_logs/open_5g_vht80_ch149__A_sta_B_ap.log
+wpa2_5g_vht80_ch149__A_sta_B_ap    PASS   wlx000c433a3348    wlp58s0            430.00       rc=0           /tmp/sta_ap_role_logs/wpa2_5g_vht80_ch149__A_sta_B_ap.log
+wpa3_5g_vht80_ch149__A_sta_B_ap    PASS   wlx000c433a3348    wlp58s0            449.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_vht80_ch149__A_sta_B_ap.log
+open_5g_vht80_ch36_hidden__A_sta_B_ap PASS   wlx000c433a3348    wlp58s0            432.00       rc=0           /tmp/sta_ap_role_logs/open_5g_vht80_ch36_hidden__A_sta_B_ap.log
+owe_5g_vht80_ch149__A_sta_B_ap     PASS   wlx000c433a3348    wlp58s0            452.00       rc=0           /tmp/sta_ap_role_logs/owe_5g_vht80_ch149__A_sta_B_ap.log
+open_2g_ht20_ch6__A_sta_B_ap       PASS   wlx000c433a3348    wlp58s0            43.70        rc=0           /tmp/sta_ap_role_logs/open_2g_ht20_ch6__A_sta_B_ap.log
+wpa2_2g_ht20_ch6__A_sta_B_ap       PASS   wlx000c433a3348    wlp58s0            44.70        rc=0           /tmp/sta_ap_role_logs/wpa2_2g_ht20_ch6__A_sta_B_ap.log
+owe_2g_ht20_ch6__A_sta_B_ap        PASS   wlx000c433a3348    wlp58s0            41.70        rc=0           /tmp/sta_ap_role_logs/owe_2g_ht20_ch6__A_sta_B_ap.log
+open_5g_he80_ch36__A_sta_B_ap      PASS   wlx000c433a3348    wlp58s0            633.00       rc=0           /tmp/sta_ap_role_logs/open_5g_he80_ch36__A_sta_B_ap.log
+wpa2_5g_he80_ch36__A_sta_B_ap      PASS   wlx000c433a3348    wlp58s0            628.00       rc=0           /tmp/sta_ap_role_logs/wpa2_5g_he80_ch36__A_sta_B_ap.log
+wpa3_5g_he80_ch36__A_sta_B_ap      PASS   wlx000c433a3348    wlp58s0            618.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_he80_ch36__A_sta_B_ap.log
+owe_5g_he80_ch36__A_sta_B_ap       PASS   wlx000c433a3348    wlp58s0            624.00       rc=0           /tmp/sta_ap_role_logs/owe_5g_he80_ch36__A_sta_B_ap.log
+open_2g_he20_ch6__A_sta_B_ap       PASS   wlx000c433a3348    wlp58s0            29.90        rc=0           /tmp/sta_ap_role_logs/open_2g_he20_ch6__A_sta_B_ap.log
+wpa2_2g_he20_ch6__A_sta_B_ap       PASS   wlx000c433a3348    wlp58s0            67.50        rc=0           /tmp/sta_ap_role_logs/wpa2_2g_he20_ch6__A_sta_B_ap.log
+owe_2g_he20_ch6__A_sta_B_ap        PASS   wlx000c433a3348    wlp58s0            77.50        rc=0           /tmp/sta_ap_role_logs/owe_2g_he20_ch6__A_sta_B_ap.log
+wpa3_2g_he20_ch6__A_sta_B_ap       PASS   wlx000c433a3348    wlp58s0            89.10        rc=0           /tmp/sta_ap_role_logs/wpa3_2g_he20_ch6__A_sta_B_ap.log
+open_5g_he80_ch149__A_sta_B_ap     PASS   wlx000c433a3348    wlp58s0            596.00       rc=0           /tmp/sta_ap_role_logs/open_5g_he80_ch149__A_sta_B_ap.log
+wpa2_5g_he80_ch149__A_sta_B_ap     PASS   wlx000c433a3348    wlp58s0            612.00       rc=0           /tmp/sta_ap_role_logs/wpa2_5g_he80_ch149__A_sta_B_ap.log
+wpa3_5g_he80_ch149__A_sta_B_ap     PASS   wlx000c433a3348    wlp58s0            616.00       rc=0           /tmp/sta_ap_role_logs/wpa3_5g_he80_ch149__A_sta_B_ap.log
+owe_5g_he80_ch149__A_sta_B_ap      PASS   wlx000c433a3348    wlp58s0            612.00       rc=0           /tmp/sta_ap_role_logs/owe_5g_he80_ch149__A_sta_B_ap.log
+wpa2wpa3_5g_he80_ch36_transition__A_sta_B_ap PASS   wlx000c433a3348    wlp58s0            612.00       rc=0           /tmp/sta_ap_role_logs/wpa2wpa3_5g_he80_ch36_transition__A_sta_B_ap.log
+wpa2wpa3_5g_he80_ch149_transition__A_sta_B_ap PASS   wlx000c433a3348    wlp58s0            616.00       rc=0           /tmp/sta_ap_role_logs/wpa2wpa3_5g_he80_ch149_transition__A_sta_B_ap.log
+
+Total : 29
+PASS  : 29
+FAIL  : 0
+

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-IFACE="wlxb2301b2cca0e"
+IFACE="wlp58s0"
 WPA_CLI="sudo ./wpa_cli"
-PING_IP="192.168.1.254"
+PING_IP="192.168.0.254"
 
 ROUNDS=10000
 CONNECT_TIMEOUT=20

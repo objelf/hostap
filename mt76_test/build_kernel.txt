@@ -1,7 +1,19 @@
+########## understand the ap ip #################
+
+sudo tcpdump -i wlp58s0 -n -e arp or icmp6
+ sudo arping -I wlp58s0  192.168.0.254
+################################################
+ 
+
 sudo make O=build-wl-20260326  M=drivers/net/wireless/mediatek/mt76 LOCALVERSION="-mt7902-wlnext-20260326"
 sudo make O=build-wl-20260326  M=drivers/net/wireless/mediatek/mt76 LOCALVERSION="-mt7902-wlnext-20260326"  modules_install
 
-sudo modprobe -r mt7925e mt7921u mt792x_usb mt76_usb  mt7925_common mt7921_common mt792x_lib mt76_connac_lib mt76 
+wlx000c433a3348
+echo selftest > /sys/kernel/debug/ieee80211/phy3/aer_selftest
+echo normal > /sys/kernel/debug/ieee80211/phy6/aer_selftest
+
+
+sudo modprobe -r mt7925u mt7925e mt7921u mt792x_usb mt76_usb  mt7925_common mt7921_common mt792x_lib mt76_connac_lib mt76 
 
 sudo modprobe mt76
 sudo modprobe mt76_connac_lib
@@ -12,6 +24,75 @@ sudo modprobe mt76_usb
 sudo modprobe mt792x_usb
 sudo modprobe mt7921u
 sudo modprobe mt7925e
+sudo modprobe mt7925u
+
+#list git branches from the newest active to oldest active
+git for-each-ref --sort=-committerdate --format='%(committerdate:iso8601) %(refname:short)' refs/heads/
+
+#ping floods
+ping -I wlx000c433a3336 192.168.1.254  -i 0.01
+
+for i in $(seq 1 50); do
+    (
+        ping -I wlx000c433a3336 192.168.1.254 -i 0.01 -c 100000000000 |
+        sed "s/^/[ping-$i] /"
+    ) &
+done
+
+for i in $(seq 1 100); do
+    (
+        ping -I wlx000c433a3336 192.168.1.254 -i 0.01 -c 100000000000 |
+        sed "s/^/[ping-$i] /"
+    ) &
+done
+
+for i in $(seq 1 150); do
+    (
+        ping -I wlx000c433a3336 192.168.1.254 -i 0.01 -c 100000000000 |
+        sed "s/^/[ping-$i] /"
+    ) &
+done
+
+for i in $(seq 1 200); do
+    (
+        ping -I wlx000c433a3336 192.168.1.254 -i 0.01 -c 100000000000 |
+        sed "s/^/[ping-$i] /"
+    ) &
+done
+
+wait
+
+killall ping
+
+#scan
+nmcli device wifi list ifname wlx000c433a3336
+#disconnect & connect to certain ap with bssid
+sudo nmcli device disconnect wlx000c433a3336
+sudo nmcli device wifi connect "ATTVcr7kPm" password "t8fju?rbrhdj" ifname wlx000c433a3336
+
+sudo nmcli device disconnect wlx000c433a3336
+
+sudo nmcli device wifi connect "ATTVcr7kPm" \
+  password "t8fju?rbrhdj" \
+  bssid D0:FC:D0:93:AF:B4 \
+  ifname wlx000c433a3336
+
+
+sudo nmcli device disconnect wlx000c433a3336
+
+sudo nmcli device wifi connect "ATTVcr7kPm" \
+  password "t8fju?rbrhdj" \
+  bssid D0:FC:D0:93:AF:BC \
+  ifname wlx000c433a3336g
+
+nmcli -t -f ACTIVE,BSSID,SSID dev wifi | grep '^yes:'
+
+
+sean@sean-HP-EliteBook-830-G6:~/dev/wireless$ tar -czf mt76-100-src.tar.gz   $(find drivers/net/wireless/mediatek/mt76/ -type f \( -name '*.c' -o -name '*.h' \))
+
+
+tar -czf mt7921-src.tar.gz \
+  $(find drivers/net/wireless/mediatek/mt76/mt7921 -type f \( -name '*.c' -o -name '*.h' \))
 
 find drivers/net/wireless/mediatek/mt76 -type f \( -name '*.c' -o -name vi'*.h' \) \
   | tar -czf mt76_mt7927.tar.gz -T -
@@ -41,10 +122,11 @@ sudo ./wpa_supplicant -D nl80211 -i wlp58s0 -c wlp58s0-ATTVcr7kPm.conf -ddd
 sudo ./wpa_supplicant -D nl80211 -i wlp58s0 -c wlp58s0-ATTVcr7kPm-2.4g.conf -ddd
 sudo ./wpa_supplicant -D nl80211 -i wlx000c433a3336 -c mt7902u-open-5g.conf -ddd
 sudo ./wpa_cli -i wlx000c433a3336
+sudo ./wpa_cli -i wlp58s0
 iw event
 
 #test hostapd
-cd ~/dev/hostap_aptest/hostapd/
+cd ~/dev/hostap/hostapd/
 sudo mkdir -p /var/run/hostapd
 nmcli device set wlx9e3578c9b1fb managed no
 sudo iw dev wlx9e3578c9b1fb del 2>/dev/null
@@ -52,7 +134,7 @@ sudo iw phy phy5 interface add ap0 type __ap
 sudo ./hostapd -dd hostapd_open_24g.conf
 sudo ./hostapd -dd -i wlxb2301b2cca0e hostapd_open_5g.conf
 
-#one laptop to test station and ap mode
+#### one laptop to test station and ap mode
 
 nmcli device set wlx000c433a3336  managed no
 nmcli device set wlx3e6b7c6b4943  managed no
@@ -88,7 +170,7 @@ dev=$(readlink -f /sys/class/net/wlx000c433a3336/device); while [ "$dev" != "/" 
 dev=$(readlink -f /sys/class/net/wlx3e6b7c6b4943/device); while [ "$dev" != "/" ]; do [ -f "$dev/idVendor" ] && [ -f "$dev/idProduct" ] && { echo "VID:PID $(cat "$dev/idVendor"):$(cat "$dev/idProduct")"; break; }; [ -f "$dev/vendor" ] && [ -f "$dev/device" ] && { echo "PCI VID:DID $(cat "$dev/vendor"):$(cat "$dev/device")"; break; }; dev=$(dirname "$dev"); done
 #show VID:PID 0e8d:7902
 
-sudo iw phy phy0 interface add ap0 type __ap
+sudo iw phy phy17 interface add ap0 type __ap
 #create ap mode on the top of 7902
 #then become
 phy#0
@@ -120,12 +202,14 @@ sudo ip netns del ns_sta 2>/dev/null
 sudo ip netns add ns_ap
 sudo ip netns add ns_sta
 
-sudo iw phy phy0 set netns name ns_ap
-sudo iw phy phy2 set netns name ns_sta
+sudo iw phy phy17 set netns name ns_ap
+sudo iw phy phy16 set netns name ns_sta
 
-cd ~/dev/hostap/hostapd/
+9
 sudo mkdir -p /var/run/hostapd
-sudo ip netns exec ns_ap ./hostapd -dd d-i wlx3e6b7c6b4943 ../mt76_test/hostapd_wpa3_5g_ht20_ch36_basic.conf
+sudo ip netns exec ns_ap ./hostapd -ddd -i wlp58s0 ../mt76_test/hostapd_wpa3_5g_ht20_ch36_basic.conf
+sudo mkdir -p /var/run/hostapd2
+sudo ip netns exec ns_ap ./hostapd -ddd -i ap0 ../mt76_test/hostapd_wpa3_2g_he20_ch6_basic_2.conf
 - run wpa_supplicant insdie the ns
 
 cd ~/dev/hostap/wpa_supplicant
@@ -142,11 +226,11 @@ sudo ip netns exec ns_sta ip link set lo up
 sudo ip netns exec ns_ap iw dev
 sudo ip netns exec ns_sta iw dev
 
-sudo ip netns exec ns_ap ip link set wlx3e6b7c6b4943 up
-sudo ip netns exec ns_ap ip link set wlx3e6b7c6b4943 up
+sudo ip netns exec ns_ap ip link set wlp58s0 up
+sudo ip netns exec ns_ap ip link set wlp58s0 up
 sudo ip netns exec ns_sta ip link set wlx000c433a3336 up
 
-sudo ip netns exec ns_ap ip addr add 192.168.50.1/24 dev wlx3e6b7c6b4943
+sudo ip netns exec ns_ap ip addr add 192.168.50.1/24 dev wlp58s0
 sudo ip netns exec ns_sta ip addr add 192.168.50.2/24 dev wlx000c433a3336
 
 sudo ip netns exec ns_ap ip route show table local
@@ -248,6 +332,21 @@ for i in wlx000c433a3336 wlxb2301b2cca0e; do
 done
 
 ##one laptop to test p2p
+- stop all processes
+sudo pkill -f hostapd
+sudo pkill -f wpa_supplicant
+sudo pkill -f iperf3
+- delete old netns
+sudo ip netns del ns_ap 2>/dev/null
+sudo ip netns del ns_sta 2>/dev/null
+sudo ip netns del ns_p2p_go 2>/dev/null
+sudo ip netns del ns_p2p_cli 2>/dev/null
+- check root ns
+iw dev
+.... doesn't work
+
+modprobe -r mt7921u
+modprobe mt7921u
 
 
 
@@ -296,3 +395,171 @@ for i in $(seq 1 10000); do
     sleep 1
 done
 ######################################################
+
+
+GOOD
+sudo PAUSE_BEFORE_RUN=no \
+     STA_IF=wlx000c433a3348 \
+     AP_BASE_IF=wlp58s0 \
+     HOSTAPD_BIN=/home/sean/dev/hostap/hostapd/hostapd \
+     WPA_SUP_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_supplicant \
+     WPA_CLI_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_cli \
+     HOSTAPD_CONF_MAIN=/home/sean/dev/hostap/mt76_test/hostapd_open_5g_he80_ch149_basic.conf \
+     WPA_CONF=/home/sean/dev/hostap/mt76_test/wpa_open_5g_he80_ch149_basic.conf \
+     ./one_laptop_sta_ap_test.sh
+
+./cleanup_sta_ap_test.sh
+
+GOOD
+sudo PAUSE_BEFORE_RUN=no \
+     STA_IF=wlp58s0 \
+     AP_BASE_IF=wlx000c433a3348 \
+     HOSTAPD_BIN=/home/sean/dev/hostap/hostapd/hostapd \
+     WPA_SUP_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_supplicant \
+     WPA_CLI_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_cli \
+     HOSTAPD_CONF_MAIN=/home/sean/dev/hostap/mt76_test/hostapd_open_5g_he80_ch149_basic.conf \
+     WPA_CONF=/home/sean/dev/hostap/mt76_test/wpa_open_5g_he80_ch149_basic.conf \
+     ./one_laptop_sta_ap_test.sh
+
+./cleanup_sta_ap_test.sh
+
+GOOD
+sudo PAUSE_BEFORE_RUN=no \
+     STA_IF=wlp58s0 \
+     AP_BASE_IF=wlx000c433a3348 \
+     HOSTAPD_BIN=/home/sean/dev/hostap/hostapd/hostapd \
+     WPA_SUP_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_supplicant \
+     WPA_CLI_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_cli \
+     HOSTAPD_CONF_MAIN=/home/sean/dev/hostap/mt76_test/hostapd_wpa3_5g_ht20_ch36_basic.conf \
+     WPA_CONF=/home/sean/dev/hostap/mt76_test/wpa_wpa3_5g_ht20_ch36_basic.conf \
+     ./one_laptop_sta_ap_test.sh
+
+sudo pkill -f hostapd || true
+sudo pkill -f wpa_supplicant || true
+sudo pkill -f "iperf3 -s" || true
+sudo ip netns del ns_ap 2>/dev/null || true
+sudo ip netns del ns_sta 2>/dev/null || true
+sudo iw dev ap0 del 2>/dev/null || true
+
+GOOD
+sudo PAUSE_BEFORE_RUN=no \
+     STA_IF=wlx000c433a3348 \
+     AP_BASE_IF=wlp58s0 \
+     HOSTAPD_BIN=/home/sean/dev/hostap/hostapd/hostapd \
+     WPA_SUP_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_supplicant \
+     WPA_CLI_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_cli \
+     HOSTAPD_CONF_MAIN=/home/sean/dev/hostap/mt76_test/hostapd_wpa3_5g_ht20_ch36_basic.conf \
+     WPA_CONF=/home/sean/dev/hostap/mt76_test/wpa_wpa3_5g_ht20_ch36_basic.conf \
+     ./one_laptop_sta_ap_test.sh
+
+GOOD
+sudo PAUSE_BEFORE_RUN=no \
+     STA_IF=wlxf695c8aae435 \
+     AP_BASE_IF=wlp58s0 \
+     HOSTAPD_BIN=/home/sean/dev/hostap/hostapd/hostapd \
+     WPA_SUP_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_supplicant \
+     WPA_CLI_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_cli \
+     HOSTAPD_CONF_MAIN=/home/sean/dev/hostap/mt76_test/hostapd_open_5g_vht80_ch36_basic.conf \
+     WPA_CONF=/home/sean/dev/hostap/mt76_test/wpa_open_5g_vht80_ch36_basic.conf \
+     ./one_laptop_sta_ap_test.sh
+
+
+sudo PAUSE_BEFORE_RUN=no \
+     STA_IF=wlp58s0 \
+     AP_BASE_IF=wlx000c433a3348 \
+     HOSTAPD_BIN=/home/sean/dev/hostap/hostapd/hostapd \
+     WPA_SUP_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_supplicant \
+     WPA_CLI_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_cli \
+     HOSTAPD_CONF_MAIN=/home/sean/dev/hostap/mt76_test/hostapd_open_2g_ht20_ch6_basic.conf \
+     WPA_CONF=/home/sean/dev/hostap/mt76_test/wpa_open_2g_ht20_ch6_basic.conf \
+     ./one_laptop_sta_ap_test.sh
+
+sudo PAUSE_BEFORE_RUN=no \
+     STA_IF=wlx000c433a3348 \
+     AP_BASE_IF=wlp58s0 \
+     HOSTAPD_BIN=/home/sean/dev/hostap/hostapd/hostapd \
+     WPA_SUP_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_supplicant \
+     WPA_CLI_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_cli \
+     HOSTAPD_CONF_MAIN=/home/sean/dev/hostap/mt76_test/hostapd_open_2g_ht20_ch6_basic.conf \
+     WPA_CONF=/home/sean/dev/hostap/mt76_test/wpa_open_2g_ht20_ch6_basic.conf \
+     ./one_laptop_sta_ap_test.sh
+
+
+sudo PAUSE_BEFORE_RUN=no \
+     STA_IF=wlp58s0 \
+     AP_BASE_IF=wlx000c433a3348 \
+     HOSTAPD_BIN=/home/sean/dev/hostap/hostapd/hostapd \
+     WPA_SUP_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_supplicant \
+     WPA_CLI_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_cli \
+     HOSTAPD_CONF_MAIN=/home/sean/dev/hostap/mt76_test/hostapd_wpa3_5g_ht20_ch36_basic.conf \
+     WPA_CONF=/home/sean/dev/hostap/mt76_test/wpa_wpa3_5g_ht20_ch36_basic.conf \
+     ./one_laptop_sta_ap_test.sh
+
+
+sudo PAUSE_BEFORE_RUN=no \
+     STA_IF=wlp58s0 \
+     AP_BASE_IF=wlx000c433a3336 \
+     HOSTAPD_BIN=/home/sean/dev/hostap/hostapd/hostapd \
+     WPA_SUP_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_supplicant \
+     WPA_CLI_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_cli \
+     HOSTAPD_CONF_MAIN=/home/sean/dev/hostap/mt76_test/hostapd_wpa3_5g_vht80_ch149_basic.conf  \
+     WPA_CONF=/home/sean/dev/hostap/mt76_test/wpa_wpa3_5g_ht20_ch36_basic.conf \
+     ./one_laptop_sta_ap_test.sh
+
+hostapd_wpa3_5g_vht80_ch149_basic.conf <--> wpa_wpa3_5g_vht80_ch149_basic.conf
+NG
+sudo PAUSE_BEFORE_RUN=no \
+     STA_IF=wlp58s0 \
+     AP_BASE_IF=wlxf695c8aae435 \
+     HOSTAPD_BIN=/home/sean/dev/hostap/hostapd/hostapd \
+     WPA_SUP_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_supplicant \
+     WPA_CLI_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_cli \
+     HOSTAPD_CONF_MAIN=/home/sean/dev/hostap/mt76_test/hostapd_open_5g.conf \
+     WPA_CONF=/home/sean/dev/hostap/mt76_test/wpa-open-5g.conf \
+     ./one_laptop_sta_ap_test.sh
+
+sudo PAUSE_BEFORE_RUN=no \
+     STA_IF=wlxf695c8aae435 \
+     AP_BASE_IF=wlp58s0 \
+     HOSTAPD_BIN=/home/sean/dev/hostap/hostapd/hostapd \
+     WPA_SUP_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_supplicant \
+     WPA_CLI_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_cli \
+     HOSTAPD_CONF_MAIN=/home/sean/dev/hostap/mt76_test/hostapd_open_5g.conf \
+     WPA_CONF=/home/sean/dev/hostap/mt76_test/wpa-open-5g.conf \
+     ./one_laptop_sta_ap_test.sh
+
+./cleanup_sta_ap_test.sh
+
+
+
+sudo PAUSE_BEFORE_RUN=no \
+     STA_IF=wlx000c43baabd4 \
+     AP_BASE_IF=wlp58s0 \
+     HOSTAPD_BIN=/home/sean/dev/hostap/hostapd/hostapd \
+     WPA_SUP_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_supplicant \
+     WPA_CLI_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_cli \
+     HOSTAPD_CONF_MAIN=/home/sean/dev/hostap/mt76_test/hostapd_open_5g_he80_ch149_basic.conf \
+     WPA_CONF=/home/sean/dev/hostap/mt76_test/wpa_open_5g_he80_ch149_basic.conf \
+     ./one_laptop_sta_ap_test.sh
+     
+     
+sudo PAUSE_BEFORE_RUN=no \
+     STA_IF=wlp58s0 \
+     AP_BASE_IF=wlx000c43baabd4\
+     HOSTAPD_BIN=/home/sean/dev/hostap/hostapd/hostapd \
+     WPA_SUP_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_supplicant \
+     WPA_CLI_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_cli \
+     HOSTAPD_CONF_MAIN=/home/sean/dev/hostap/mt76_test/hostapd_wpa2_5g_eht80_ch149_basic.conf\
+     WPA_CONF=/home/sean/dev/hostap/mt76_test/wpa_supplicant_wpa2_5g_eht80_ch149_basic.conf \
+     ./one_laptop_sta_ap_test.sh
+     
+     
+sudo PAUSE_BEFORE_RUN=no \
+     STA_IF=wlx000c43baabd4 \
+     AP_BASE_IF=wlp58s0\
+     HOSTAPD_BIN=/home/sean/dev/hostap/hostapd/hostapd \
+     WPA_SUP_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_supplicant \
+     WPA_CLI_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_cli \
+     HOSTAPD_CONF_MAIN=/home/sean/dev/hostap/mt76_test/hostapd_wpa2_5g_eht80_ch149_basic.conf\
+     WPA_CONF=/home/sean/dev/hostap/mt76_test/wpa_supplicant_wpa2_5g_eht80_ch149_basic.conf \
+     ./one_laptop_sta_ap_test.sh
