@@ -4,6 +4,7 @@ set -Eeuo pipefail
 ###############################################################################
 # User config
 ###############################################################################
+TEST_MODE="${TEST_MODE:-local_ns}"            # local_ns only for now; remote_ap later
 STA_IF="${STA_IF:-wlx000c433a3336}"          # station interface
 AP_BASE_IF="${AP_BASE_IF:-wlp58s0}"          # existing AP-side interface OR base iface on AP PHY
 AP_VIF="${AP_VIF:-ap0}"                      # AP virtual interface to create
@@ -133,206 +134,245 @@ wait_for_ping() {
     return 1
 }
 
-###############################################################################
-# Pre-check
-###############################################################################
-need_cmd sudo
-need_cmd iw
-need_cmd ip
-need_cmd nmcli
-need_cmd iperf3
+precheck_common()
+{
+    need_cmd sudo
+    need_cmd iw
+    need_cmd ip
+    need_cmd nmcli
+    need_cmd iperf3
 
-if [[ "$VERBOSE" == "yes" ]]; then
-    log "Current interfaces before validation:"
-    iw dev || true
-    ip link show || true
-fi
+    if [[ "$VERBOSE" == "yes" ]]; then
+        log "Current interfaces before validation:"
+        iw dev || true
+        ip link show || true
+    fi
 
-[[ -x "$HOSTAPD_BIN" ]] || die "hostapd not executable: $HOSTAPD_BIN"
-[[ -x "$WPA_SUP_BIN" ]] || die "wpa_supplicant not executable: $WPA_SUP_BIN"
-[[ -x "$WPA_CLI_BIN" ]] || die "wpa_cli not executable: $WPA_CLI_BIN"
-[[ -f "$HOSTAPD_CONF_MAIN" ]] || die "Missing hostapd conf: $HOSTAPD_CONF_MAIN"
-[[ -f "$WPA_CONF" ]] || die "Missing wpa_supplicant conf: $WPA_CONF"
+    [[ -x "$HOSTAPD_BIN" ]] || die "hostapd not executable: $HOSTAPD_BIN"
+    [[ -x "$WPA_SUP_BIN" ]] || die "wpa_supplicant not executable: $WPA_SUP_BIN"
+    [[ -x "$WPA_CLI_BIN" ]] || die "wpa_cli not executable: $WPA_CLI_BIN"
+    [[ -f "$HOSTAPD_CONF_MAIN" ]] || die "Missing hostapd conf: $HOSTAPD_CONF_MAIN"
+    [[ -f "$WPA_CONF" ]] || die "Missing wpa_supplicant conf: $WPA_CONF"
 
-mkdir -p "$LOG_DIR"
+    mkdir -p "$LOG_DIR"
+}
 
-if ! if_exists_root "$STA_IF" && ! if_exists_ns "$NS_STA" "$STA_IF"; then
-    die "STA interface not found: $STA_IF"
-fi
+setup_debug_opts()
+{
+    HOSTAPD_DBG_OPT=""
+    WPA_DBG_OPT=""
 
-if ! if_exists_root "$AP_BASE_IF" && ! if_exists_ns "$NS_AP" "$AP_BASE_IF"; then
-    die "AP base interface not found: $AP_BASE_IF"
-fi
+    if [[ "$DEBUG_80211" == "yes" ]]; then
+        HOSTAPD_DBG_OPT="-ddd"
+        WPA_DBG_OPT="-ddd"
+    fi
+}
 
-STA_PHY="$(get_phy_for_if "$STA_IF")"
-AP_PHY="$(get_phy_for_if "$AP_BASE_IF")"
+local_ns_validate_ifaces()
+{
+    if ! if_exists_root "$STA_IF" && ! if_exists_ns "$NS_STA" "$STA_IF"; then
+        die "STA interface not found: $STA_IF"
+    fi
 
-[[ -n "$STA_PHY" ]] || die "Failed to get phy for $STA_IF"
-[[ -n "$AP_PHY" ]] || die "Failed to get phy for $AP_BASE_IF"
+    if ! if_exists_root "$AP_BASE_IF" && ! if_exists_ns "$NS_AP" "$AP_BASE_IF"; then
+        die "AP base interface not found: $AP_BASE_IF"
+    fi
 
-###############################################################################
-# Stage 1: inspect / prepare
-###############################################################################
-if [[ "$VERBOSE" == "yes" ]]; then
-    log "Current interfaces:"
-    run iw dev
-fi
+    STA_PHY="$(get_phy_for_if "$STA_IF")"
+    AP_PHY="$(get_phy_for_if "$AP_BASE_IF")"
 
-echo
-log "Selected roles:"
-echo "  STA_IF    = $STA_IF   ($STA_PHY)   $(show_hw_id "$STA_IF")"
-echo "  AP_BASE_IF= $AP_BASE_IF   ($AP_PHY)   $(show_hw_id "$AP_BASE_IF")"
-echo "  AP_VIF    = $AP_VIF"
-echo
+    [[ -n "$STA_PHY" ]] || die "Failed to get phy for $STA_IF"
+    [[ -n "$AP_PHY" ]] || die "Failed to get phy for $AP_BASE_IF"
+}
 
-log "Set NetworkManager ownership"
-if if_exists_root "$STA_IF"; then
-    run nmcli device set "$STA_IF" managed no
-else
-    log "$STA_IF not in root namespace, skip nmcli"
-fi
+local_ns_prepare_roles()
+{
+    if [[ "$VERBOSE" == "yes" ]]; then
+        log "Current interfaces:"
+        run iw dev
+    fi
 
-if if_exists_root "$AP_BASE_IF"; then
-    run nmcli device set "$AP_BASE_IF" managed no || true
-else
-    log "$AP_BASE_IF not in root namespace, skip nmcli"
-fi
-
-AP_RUN_IF="$AP_BASE_IF"
-
-if [[ "$AUTO_CREATE_AP_VIF" == "yes" ]]; then
-    AP_RUN_IF="$AP_VIF"
-fi
-
-
-log "AP runtime interface: $AP_RUN_IF"
-if [[ "$VERBOSE" == "yes" ]]; then
     echo
-    log "Interfaces after prepare:"
-    run iw dev
-fi
-echo
+    log "Selected roles:"
+    echo "  STA_IF    = $STA_IF   ($STA_PHY)   $(show_hw_id "$STA_IF")"
+    echo "  AP_BASE_IF= $AP_BASE_IF   ($AP_PHY)   $(show_hw_id "$AP_BASE_IF")"
+    echo "  AP_VIF    = $AP_VIF"
+    echo
 
-if [[ "$PAUSE_BEFORE_RUN" == "yes" ]]; then
-    read -r -p "Check interface roles above. Press Enter to continue, or Ctrl-C to stop... " _
-fi
+    log "Set NetworkManager ownership"
+    if if_exists_root "$STA_IF"; then
+        run nmcli device set "$STA_IF" managed no
+    else
+        log "$STA_IF not in root namespace, skip nmcli"
+    fi
 
-###############################################################################
-# Stage 2: namespaces and bring-up
-###############################################################################
-if ! netns_exists "$NS_AP"; then
-    run sudo ip netns add "$NS_AP"
-fi
+    if if_exists_root "$AP_BASE_IF"; then
+        run nmcli device set "$AP_BASE_IF" managed no || true
+    else
+        log "$AP_BASE_IF not in root namespace, skip nmcli"
+    fi
 
-if ! if_exists_ns "$NS_AP" "$AP_BASE_IF"; then
-    log "Move AP PHY into test namespace"
-    run sudo iw phy "$AP_PHY" set netns name "$NS_AP"
-else
-    log "$AP_BASE_IF already in $NS_AP"
-fi
+    AP_RUN_IF="$AP_BASE_IF"
 
-if ! netns_exists "$NS_STA"; then
-    run sudo ip netns add "$NS_STA"
-fi
+    if [[ "$AUTO_CREATE_AP_VIF" == "yes" ]]; then
+        AP_RUN_IF="$AP_VIF"
+    fi
 
-if ! if_exists_ns "$NS_STA" "$STA_IF"; then
-    log "Move STA PHY into test namespace"
-    run sudo iw phy "$STA_PHY" set netns name "$NS_STA"
-else
-    log "$STA_IF already in $NS_STA"
-fi
+    log "AP runtime interface: $AP_RUN_IF"
+    if [[ "$VERBOSE" == "yes" ]]; then
+        echo
+        log "Interfaces after prepare:"
+        run iw dev
+    fi
+    echo
 
-AP_PHY="$(ip netns exec "$NS_AP" iw dev "$AP_BASE_IF" info 2>/dev/null | awk '/wiphy/ {print "phy"$2; exit}')"
-STA_PHY="$(ip netns exec "$NS_STA" iw dev "$STA_IF" info 2>/dev/null | awk '/wiphy/ {print "phy"$2; exit}')"
+    if [[ "$PAUSE_BEFORE_RUN" == "yes" ]]; then
+        read -r -p "Check interface roles above. Press Enter to continue, or Ctrl-C to stop... " _
+    fi
+}
 
+local_ns_setup_namespaces()
+{
+    if ! netns_exists "$NS_AP"; then
+        run sudo ip netns add "$NS_AP"
+    fi
 
-log "Bring loopback up"
-ns_run "$NS_AP" ip link set lo up
-ns_run "$NS_STA" ip link set lo up
+    if ! if_exists_ns "$NS_AP" "$AP_BASE_IF"; then
+        log "Move AP PHY into test namespace"
+        run sudo iw phy "$AP_PHY" set netns name "$NS_AP"
+    else
+        log "$AP_BASE_IF already in $NS_AP"
+    fi
 
-if [[ "$AUTO_CREATE_AP_VIF" == "yes" ]]; then
-    sudo ip netns exec "$NS_AP" iw dev "$AP_VIF" del 2>/dev/null || true
-    log "Creating AP VIF $AP_VIF on $AP_PHY in $NS_AP"
-    ns_run "$NS_AP" iw phy "$AP_PHY" interface add "$AP_VIF" type __ap
-fi
+    if ! netns_exists "$NS_STA"; then
+        run sudo ip netns add "$NS_STA"
+    fi
 
-log "Debug namespace interfaces"
-ns_run "$NS_AP" iw dev
-ns_run "$NS_STA" iw dev
+    if ! if_exists_ns "$NS_STA" "$STA_IF"; then
+        log "Move STA PHY into test namespace"
+        run sudo iw phy "$STA_PHY" set netns name "$NS_STA"
+    else
+        log "$STA_IF already in $NS_STA"
+    fi
 
-log "Bring interfaces up"
-# AP side
-if ! if_exists_ns "$NS_AP" "$AP_RUN_IF"; then
-    die "AP runtime interface not found in $NS_AP: $AP_RUN_IF"
-fi
-ns_run "$NS_AP" ip link set "$AP_RUN_IF" up
+    AP_PHY="$(ip netns exec "$NS_AP" iw dev "$AP_BASE_IF" info 2>/dev/null | awk '/wiphy/ {print "phy"$2; exit}')"
+    STA_PHY="$(ip netns exec "$NS_STA" iw dev "$STA_IF" info 2>/dev/null | awk '/wiphy/ {print "phy"$2; exit}')"
+}
 
-# STA side
-ns_run "$NS_STA" ip link set "$STA_IF" up
+local_ns_bringup_links()
+{
+    log "Bring loopback up"
+    ns_run "$NS_AP" ip link set lo up
+    ns_run "$NS_STA" ip link set lo up
 
-log "Assign IP addresses"
-ns_run "$NS_AP" ip addr flush dev "$AP_RUN_IF" || true
-ns_run "$NS_STA" ip addr flush dev "$STA_IF" || true
+    if [[ "$AUTO_CREATE_AP_VIF" == "yes" ]]; then
+        sudo ip netns exec "$NS_AP" iw dev "$AP_VIF" del 2>/dev/null || true
+        log "Creating AP VIF $AP_VIF on $AP_PHY in $NS_AP"
+        ns_run "$NS_AP" iw phy "$AP_PHY" interface add "$AP_VIF" type __ap
+    fi
 
-ns_run "$NS_AP" ip addr add "$AP_IP" dev "$AP_RUN_IF"
-ns_run "$NS_STA" ip addr add "$STA_IP" dev "$STA_IF"
+    log "Debug namespace interfaces"
+    ns_run "$NS_AP" iw dev
+    ns_run "$NS_STA" iw dev
 
-###############################################################################
-# Start hostapd / wpa_supplicant
-###############################################################################
-log "Create runtime dirs"
-ns_run "$NS_AP" mkdir -p /var/run/hostapd
-ns_run "$NS_STA" mkdir -p /var/run/wpa_supplicant
+    log "Bring interfaces up"
+    if ! if_exists_ns "$NS_AP" "$AP_RUN_IF"; then
+        die "AP runtime interface not found in $NS_AP: $AP_RUN_IF"
+    fi
 
-HOSTAPD_DBG_OPT=""
-WPA_DBG_OPT=""
-if [[ "$DEBUG_80211" == "yes" ]]; then
-    HOSTAPD_DBG_OPT="-ddd"
-    WPA_DBG_OPT="-ddd"
-fi
+    ns_run "$NS_AP" ip link set "$AP_RUN_IF" up
+    ns_run "$NS_STA" ip link set "$STA_IF" up
 
-log "Start hostapd on $AP_RUN_IF"
-sudo ip netns exec "$NS_AP" "$HOSTAPD_BIN" $HOSTAPD_DBG_OPT -i "$AP_RUN_IF" "$HOSTAPD_CONF_MAIN" &
-HOSTAPD_PID=$!
-sleep 2
+    log "Assign IP addresses"
+    ns_run "$NS_AP" ip addr flush dev "$AP_RUN_IF" || true
+    ns_run "$NS_STA" ip addr flush dev "$STA_IF" || true
 
-if [[ -n "$HOSTAPD_CONF_SECOND" ]]; then
-    log "Start second hostapd on $AP_VIF"
-    sudo ip netns exec "$NS_AP" "$HOSTAPD_BIN" $HOSTAPD_DBG_OPT -i "$AP_VIF" "$HOSTAPD_CONF_SECOND" &
-    HOSTAPD2_PID=$!
+    ns_run "$NS_AP" ip addr add "$AP_IP" dev "$AP_RUN_IF"
+    ns_run "$NS_STA" ip addr add "$STA_IP" dev "$STA_IF"
+}
+
+local_ns_start_hostapd()
+{
+    log "Create AP runtime dir"
+    ns_run "$NS_AP" mkdir -p /var/run/hostapd
+
+    log "Start hostapd on $AP_RUN_IF"
+    sudo ip netns exec "$NS_AP" "$HOSTAPD_BIN" $HOSTAPD_DBG_OPT -i "$AP_RUN_IF" "$HOSTAPD_CONF_MAIN" &
+    HOSTAPD_PID=$!
     sleep 2
-fi
 
-log "Start wpa_supplicant on $STA_IF"
-sudo ip netns exec "$NS_STA" "$WPA_SUP_BIN" -D nl80211 -i "$STA_IF" -c "$WPA_CONF" $WPA_DBG_OPT &
-WPA_PID=$!
-sleep 10
+    if [[ -n "$HOSTAPD_CONF_SECOND" ]]; then
+        log "Start second hostapd on $AP_VIF"
+        sudo ip netns exec "$NS_AP" "$HOSTAPD_BIN" $HOSTAPD_DBG_OPT -i "$AP_VIF" "$HOSTAPD_CONF_SECOND" &
+        HOSTAPD2_PID=$!
+        sleep 2
+    fi
+}
 
-log "Check STA status"
-ns_run "$NS_STA" "$WPA_CLI_BIN" -i "$STA_IF" status || true
-ns_run "$NS_STA" iw dev "$STA_IF" link || true
+local_ns_start_wpa()
+{
+    log "Create STA runtime dir"
+    ns_run "$NS_STA" mkdir -p /var/run/wpa_supplicant
 
-###############################################################################
-# Connectivity test
-###############################################################################
-log "Routes"
-ns_run "$NS_AP" ip route show table local || true
-ns_run "$NS_STA" ip route show table local || true
+    log "Start wpa_supplicant on $STA_IF"
+    sudo ip netns exec "$NS_STA" "$WPA_SUP_BIN" -D nl80211 -i "$STA_IF" -c "$WPA_CONF" $WPA_DBG_OPT &
+    WPA_PID=$!
+    sleep 10
 
-log "Ping test"
-if wait_for_ping "$NS_STA" "$PING_TARGET" 10; then
-    ns_run "$NS_STA" ping -c 3 "$PING_TARGET"
-else
-    warn "Ping did not succeed within timeout"
-    ns_run "$NS_STA" ip neigh show || true
-fi
+    log "Check STA status"
+    ns_run "$NS_STA" "$WPA_CLI_BIN" -i "$STA_IF" status || true
+    ns_run "$NS_STA" iw dev "$STA_IF" link || true
+}
 
-log "Start iperf3 server in $NS_AP"
-sudo ip netns exec "$NS_AP" "$IPERF3_BIN" -s -D
+local_ns_connectivity_test()
+{
+    log "Routes"
+    ns_run "$NS_AP" ip route show table local || true
+    ns_run "$NS_STA" ip route show table local || true
 
-sleep 1
+    log "Ping test"
+    if wait_for_ping "$NS_STA" "$PING_TARGET" 10; then
+        ns_run "$NS_STA" ping -c 3 "$PING_TARGET"
+    else
+        warn "Ping did not succeed within timeout"
+        ns_run "$NS_STA" ip neigh show || true
+    fi
 
-log "Run iperf3 client in $NS_STA"
-ns_run "$NS_STA" "$IPERF3_BIN" -c "$PING_TARGET"
+    log "Start iperf3 server in $NS_AP"
+    sudo ip netns exec "$NS_AP" "$IPERF3_BIN" -s -D
 
-log "Test done"
+    sleep 1
+
+    log "Run iperf3 client in $NS_STA"
+    ns_run "$NS_STA" "$IPERF3_BIN" -c "$PING_TARGET"
+
+    log "Test done"
+}
+
+run_local_ns_test()
+{
+    local_ns_validate_ifaces
+    local_ns_prepare_roles
+    local_ns_setup_namespaces
+    local_ns_bringup_links
+    setup_debug_opts
+    local_ns_start_hostapd
+    local_ns_start_wpa
+    local_ns_connectivity_test
+}
+
+main()
+{
+    precheck_common
+
+    case "$TEST_MODE" in
+    local_ns)
+        run_local_ns_test
+        ;;
+    *)
+        die "Unknown TEST_MODE=$TEST_MODE"
+        ;;
+    esac
+}
+
+main "$@"
