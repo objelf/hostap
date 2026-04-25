@@ -1,0 +1,235 @@
+Two-host STA/AP Wi-Fi Test Command Sequence Guide
+=================================================
+
+Purpose
+-------
+This guide shows the exact command sequence to run two-host STA/AP Wi-Fi tests
+using:
+
+  - one_laptop_sta_ap_test.sh
+  - setup_two_host_remote.sh
+
+Default test topology:
+
+  Local machine  = STA
+  Remote machine = AP
+  Remote host    = sean@192.168.1.147
+  Local STA IF   = wlp58s0
+  Remote AP IF   = wlp58s0
+  AP IP          = 192.168.50.1/24
+  STA IP         = 192.168.50.2/24
+
+Important:
+
+  Do NOT run TEST_MODE=two_host with sudo.
+  Run the script as normal user. The script uses sudo -n internally.
+
+
+0. Enter test directory
+-----------------------
+
+cd /home/sean/dev/hostap/mt76_test
+chmod +x one_laptop_sta_ap_test.sh setup_two_host_remote.sh
+mkdir -p /home/sean/dev/hostap/mt76_test/logs
+
+
+1. First-time remote setup
+--------------------------
+
+Run this once to install the SSH key and limited sudoers rule on the remote host.
+
+REMOTE_HOST=sean@192.168.1.147 \
+REMOTE_SSH_KEY=/home/sean/.ssh/sta_ap_test_ed25519 \
+./setup_two_host_remote.sh
+
+
+2. Verify SSH key login
+-----------------------
+
+ssh -i /home/sean/.ssh/sta_ap_test_ed25519 \
+sean@192.168.1.147 hostname
+
+
+3. Verify remote sudo -n
+------------------------
+
+ssh -i /home/sean/.ssh/sta_ap_test_ed25519 \
+sean@192.168.1.147 \
+"sudo -n /usr/sbin/ip link show >/dev/null && echo sudo-ok"
+
+Expected output:
+
+  sudo-ok
+
+
+4. Check remote management card and AP card
+-------------------------------------------
+
+ssh -i /home/sean/.ssh/sta_ap_test_ed25519 \
+sean@192.168.1.147 \
+'echo SSH_CONNECTION=$SSH_CONNECTION; ip route get ${SSH_CONNECTION%% *}; iw dev; ip -br link'
+
+Check:
+
+  - 192.168.1.147 should map to the remote management card.
+  - wlp58s0 should be the remote AP test card.
+  - Do not use the remote management card as AP_BASE_IF.
+
+The test script can auto-detect the remote management interface from REMOTE_HOST.
+If AP_BASE_IF is the same as the management interface, the script should refuse to modify it.
+
+
+5. Run 5G HE80 ch36 open test
+-----------------------------
+
+RUN_ID=twohost_ap_5g_he80_ch36_$(date +%Y%m%d_%H%M%S)
+
+PAUSE_BEFORE_RUN=no \
+VERBOSE=yes \
+TEST_MODE=two_host \
+REMOTE_ROLE=ap \
+REMOTE_HOST=sean@192.168.1.147 \
+REMOTE_SSH_KEY=/home/sean/.ssh/sta_ap_test_ed25519 \
+RUN_ID=$RUN_ID \
+LOG_DIR=/home/sean/dev/hostap/mt76_test/logs \
+REMOTE_LOG_DIR=/tmp/sta_ap_test_logs \
+STA_IF=wlp58s0 \
+AP_BASE_IF=wlp58s0 \
+AP_IP=192.168.50.1/24 \
+STA_IP=192.168.50.2/24 \
+PING_TARGET=192.168.50.1 \
+HOSTAPD_BIN=/home/sean/dev/hostap/hostapd/hostapd \
+WPA_SUP_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_supplicant \
+WPA_CLI_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_cli \
+HOSTAPD_CONF_MAIN=/home/sean/dev/hostap/mt76_test/hostapd_open_5g_he80_ch36_basic.conf \
+WPA_CONF=/home/sean/dev/hostap/mt76_test/wpa_open_5g_he80_ch36_basic.conf \
+./one_laptop_sta_ap_test.sh 2>&1 | tee /home/sean/dev/hostap/mt76_test/logs/run_${RUN_ID}.log
+
+
+6. Run 5G HE80 ch149 open test
+------------------------------
+
+RUN_ID=twohost_ap_5g_he80_ch149_$(date +%Y%m%d_%H%M%S)
+
+PAUSE_BEFORE_RUN=no \
+VERBOSE=yes \
+TEST_MODE=two_host \
+REMOTE_ROLE=ap \
+REMOTE_HOST=sean@192.168.1.147 \
+REMOTE_SSH_KEY=/home/sean/.ssh/sta_ap_test_ed25519 \
+RUN_ID=$RUN_ID \
+LOG_DIR=/home/sean/dev/hostap/mt76_test/logs \
+REMOTE_LOG_DIR=/tmp/sta_ap_test_logs \
+STA_IF=wlp58s0 \
+AP_BASE_IF=wlp58s0 \
+AP_IP=192.168.50.1/24 \
+STA_IP=192.168.50.2/24 \
+PING_TARGET=192.168.50.1 \
+HOSTAPD_BIN=/home/sean/dev/hostap/hostapd/hostapd \
+WPA_SUP_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_supplicant \
+WPA_CLI_BIN=/home/sean/dev/hostap/wpa_supplicant/wpa_cli \
+HOSTAPD_CONF_MAIN=/home/sean/dev/hostap/mt76_test/hostapd_open_5g_he80_ch149_basic.conf \
+WPA_CONF=/home/sean/dev/hostap/mt76_test/wpa_open_5g_he80_ch149_basic.conf \
+./one_laptop_sta_ap_test.sh 2>&1 | tee /home/sean/dev/hostap/mt76_test/logs/run_${RUN_ID}.log
+
+
+7. Check local logs
+-------------------
+
+ls -lt /home/sean/dev/hostap/mt76_test/logs | head
+
+tail -n 120 /home/sean/dev/hostap/mt76_test/logs/run_*.log
+
+tail -n 120 /home/sean/dev/hostap/mt76_test/logs/wpa_*.log
+
+tail -n 120 /home/sean/dev/hostap/mt76_test/logs/iperf_*.log
+
+
+8. Check remote logs
+--------------------
+
+ssh -i /home/sean/.ssh/sta_ap_test_ed25519 \
+sean@192.168.1.147 \
+'ls -lt /tmp/sta_ap_test_logs | head'
+
+ssh -i /home/sean/.ssh/sta_ap_test_ed25519 \
+sean@192.168.1.147 \
+' tail -n 120 /tmp/sta_ap_test_logs/hostapd_*.log'
+
+ssh -i /home/sean/.ssh/sta_ap_test_ed25519 \
+sean@192.168.1.147 \
+' tail -n 120 /tmp/sta_ap_test_logs/iperf_*.log'
+
+
+9. Manual cleanup
+-----------------
+
+Local cleanup:
+
+sudo pkill -f '[w]pa_supplicant.*wlp58s0' || true
+sudo pkill -f '[i]perf3 -s' || true
+
+Remote cleanup:
+
+ssh -i /home/sean/.ssh/sta_ap_test_ed25519 \
+sean@192.168.1.147 \
+"sudo -n pkill -f '[h]ostapd.*wlp58s0' || true; sudo -n pkill -f '[i]perf3 -s' || true"
+
+
+10. Optional: enable detailed hostapd/wpa_supplicant debug
+----------------------------------------------------------
+
+Add this variable to the test command:
+
+DEBUG_80211=yes
+
+Example:
+
+DEBUG_80211=yes \
+PAUSE_BEFORE_RUN=no \
+VERBOSE=yes \
+TEST_MODE=two_host \
+REMOTE_ROLE=ap \
+...
+./one_laptop_sta_ap_test.sh
+
+
+11. Expected successful flow
+----------------------------
+
+A successful run should show lines similar to:
+
+  [INFO] Detected remote management interface: ...
+  [INFO] Prepare remote AP wlp58s0 on sean@192.168.1.147
+  [INFO] Start remote hostapd on wlp58s0
+  [INFO] Prepare local STA wlp58s0
+  [INFO] Start local wpa_supplicant on wlp58s0
+  [INFO] Ping remote AP from local STA
+  [INFO] Start remote iperf3 server
+  [INFO] Run iperf3 local STA -> remote AP
+  [INFO] Run iperf3 remote AP -> local STA
+  [INFO] Two-host test done
+
+iperf3 output should include sender/receiver throughput numbers.
+
+
+12. Common mistakes
+-------------------
+
+Do not run two_host mode with sudo:
+
+  Wrong:
+    sudo ./one_laptop_sta_ap_test.sh
+
+  Correct:
+    ./one_laptop_sta_ap_test.sh
+
+Do not use the remote management interface as AP_BASE_IF.
+
+If remote SSH is using wlx000c433a3348, do not run:
+
+  AP_BASE_IF=wlx000c433a3348
+
+Use the remote AP test card instead, for example:
+
+  AP_BASE_IF=wlp58s0
