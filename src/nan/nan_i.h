@@ -561,6 +561,8 @@ struct nan_peer {
  * @nira_tag: Tag for NAN Identity Resolution attribute (NIRA)
  * @initiator_pmksa: PMKSA cache for PASN-PMK authentication as an initiator
  * @responder_pmksa: PMKSA cache for PASN-PMK authentication as a responder
+ * @igtk: IGTK for NAN secure NDP
+ * @igtk_id: Key ID of the IGTK
  */
 struct nan_data {
 	struct nan_config *cfg;
@@ -577,6 +579,9 @@ struct nan_data {
 
 	struct rsn_pmksa_cache *initiator_pmksa;
 	struct rsn_pmksa_cache *responder_pmksa;
+
+	struct wpa_igtk igtk;
+	u8 igtk_id;
 };
 
 struct nan_attrs_entry {
@@ -796,6 +801,7 @@ void nan_parse_peer_dev_capa_ext(struct nan_data *nan, struct nan_peer *peer,
 int nan_configure_peer_schedule(struct nan_data *nan, struct nan_peer *peer,
 				const struct nan_schedule *local_sched);
 bool nan_is_ndpe_supported(struct nan_data *nan, struct nan_peer *peer);
+void nan_add_kde_hdr(struct wpabuf *buf, u32 kde, size_t data_len);
 #ifdef CONFIG_PASN
 int nan_nira_get_tag_nonce(const struct nan_config *nan, u8 *nonce, u8 *tag);
 void nan_pairing_deinit_peer(struct nan_peer *peer);
