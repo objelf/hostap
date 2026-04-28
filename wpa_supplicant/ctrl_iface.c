@@ -13261,6 +13261,8 @@ static int wpas_ctrl_nan_transmit(struct wpa_supplicant *wpa_s, char *cmd)
 	struct wpabuf *ssi = NULL;
 	u8 peer_addr[ETH_ALEN];
 	int ret = -1;
+	u32 cookie = 0;
+	u32 *cookie_ptr = NULL;
 
 	os_memset(peer_addr, 0, ETH_ALEN);
 
@@ -13286,6 +13288,19 @@ static int wpas_ctrl_nan_transmit(struct wpa_supplicant *wpa_s, char *cmd)
 			continue;
 		}
 
+		if (os_strncmp(token, "cookie=", 7) == 0) {
+			cookie = strtoul(token + 7, NULL, 0);
+			if (!cookie) {
+				wpa_printf(MSG_INFO,
+					   "CTRL: Invalid cookie value: %s",
+					   token + 7);
+				goto fail;
+			}
+
+			cookie_ptr = &cookie;
+			continue;
+		}
+
 		wpa_printf(MSG_INFO,
 			   "CTRL: Invalid NAN_TRANSMIT parameter: %s",
 			   token);
@@ -13305,7 +13320,7 @@ static int wpas_ctrl_nan_transmit(struct wpa_supplicant *wpa_s, char *cmd)
 	}
 
 	ret = wpas_nan_transmit(wpa_s, handle, ssi, NULL, peer_addr,
-				req_instance_id);
+				req_instance_id, cookie_ptr);
 fail:
 	wpabuf_free(ssi);
 	return ret;
