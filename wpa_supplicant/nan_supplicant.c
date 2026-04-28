@@ -628,7 +628,8 @@ static int wpas_nan_ndp_connected_cb(void *ctx,
 	wpas_notify_nan_ndp_connected(wpa_s, params->ndp_id.peer_nmi,
 				      params->ndp_id.id,
 				      params->local_ndi, params->peer_ndi,
-				      params->ssi, params->ssi_len);
+				      params->ssi, params->ssi_len,
+				      params->interface_id);
 
        return 0;
 }
@@ -1157,6 +1158,7 @@ int wpas_nan_init(struct wpa_supplicant *wpa_s)
 	nan.dev_capa.channel_switch_time =
 		wpa_s->nan_capa.max_channel_switch_time;
 	nan.dev_capa.capa = wpa_s->nan_capa.dev_capa;
+	nan.dev_capa.capa |= NAN_DEV_CAPA_NDPE_ATTR_SUPP;
 
 	nan.supported_bootstrap_methods = DEFAULT_NAN_SUPP_PBM;
 	nan.auto_accept_bootstrap_methods = DEFAULT_NAN_AUTO_ACCEPT_PBM;
@@ -2213,7 +2215,7 @@ static int wpas_nan_fill_nd_pmk(struct wpa_supplicant *wpa_s,
 
 /* Command format NAN_NDP_REQUEST handle=<id> ndi=<ifname> peer_nmi=<nmi>
    peer_id=<peer_instance_id> ssi=<hexdata> qos=<slots:latency>
-   [csid = <cipher_suite> <password=<string>|pmk=<hex>>] */
+   [csid = <cipher_suite> <password=<string>|pmk=<hex>>] [interface_id=<hex>]*/
 int wpas_nan_ndp_request(struct wpa_supplicant *wpa_s, char *cmd)
 {
 	struct nan_ndp_params ndp;
@@ -2313,6 +2315,18 @@ int wpas_nan_ndp_request(struct wpa_supplicant *wpa_s, char *cmd)
 			pwd = pos;
 		} else if (os_strcmp(token, "pmk") == 0) {
 			pmk = pos;
+		} else if (os_strcmp(token, "interface_id") == 0) {
+			ndp.interface_id = os_malloc(NAN_NDPE_TLV_IPV6_LINK_LOCAL_LEN);
+			if (!ndp.interface_id)
+				goto fail;
+
+			if (hexstr2bin(pos, ndp.interface_id,
+				       NAN_NDPE_TLV_IPV6_LINK_LOCAL_LEN) < 0) {
+				wpa_printf(MSG_DEBUG,
+					   "NAN: Invalid interface_id hex data: %s",
+					   pos);
+				goto fail;
+			}
 		} else {
 			wpa_printf(MSG_INFO, "NAN: Unknown parameter: %s",
 				   token);
@@ -2368,6 +2382,7 @@ int wpas_nan_ndp_request(struct wpa_supplicant *wpa_s, char *cmd)
 fail:
 	wpabuf_free(ndp.sched.elems);
 	wpabuf_free(ssi_buf);
+	os_free(ndp.interface_id);
 
 	return ret;
 }
@@ -2377,7 +2392,7 @@ fail:
    [reason_code=<reject_reason>]
    [ndi=<ifname> handle=<service_handle> init_ndi=<ndi>
    ndp_id=<id> [ssi=<hexdata>] [qos=<slots:latency>]
-   [csid=<csid> <password=<string>|pmk=<hex>]] */
+   [csid=<csid> <password=<string>|pmk=<hex>]] [interface_id=<hex>] */
 int wpas_nan_ndp_response(struct wpa_supplicant *wpa_s, char *cmd)
 {
 	struct nan_ndp_params ndp;
@@ -2490,6 +2505,18 @@ int wpas_nan_ndp_response(struct wpa_supplicant *wpa_s, char *cmd)
 			pwd = pos;
 		} else if (os_strcmp(token, "pmk") == 0) {
 			pmk = pos;
+		} else if (os_strcmp(token, "interface_id") == 0) {
+			ndp.interface_id = os_malloc(NAN_NDPE_TLV_IPV6_LINK_LOCAL_LEN);
+			if (!ndp.interface_id)
+				goto fail;
+
+			if (hexstr2bin(pos, ndp.interface_id,
+				       NAN_NDPE_TLV_IPV6_LINK_LOCAL_LEN) < 0) {
+				wpa_printf(MSG_DEBUG,
+					   "NAN: Invalid interface_id hex data: %s",
+					   pos);
+				goto fail;
+			}
 		} else {
 			wpa_printf(MSG_DEBUG, "NAN: Unknown parameter: %s",
 				   token);
@@ -2572,6 +2599,8 @@ int wpas_nan_ndp_response(struct wpa_supplicant *wpa_s, char *cmd)
 fail:
 	wpabuf_free(ndp.sched.elems);
 	wpabuf_free(ssi_buf);
+	os_free(ndp.interface_id);
+
 	return ret;
 }
 
