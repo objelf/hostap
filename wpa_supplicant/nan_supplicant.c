@@ -1884,8 +1884,92 @@ static void nan_dump_sched_config(const char *title,
 }
 
 
+static int
+wpas_nan_fill_ndp_schedule_chan(struct wpa_supplicant *wpa_s,
+				struct nan_schedule *sched, int map_id,
+				const struct nan_schedule_channel *chan)
+{
+	struct nan_chan_schedule *chan_sched;
+	const u8 *bitmap_data;
+	size_t bitmap_len;
+
+	/* None of these should happen */
+	if (!chan->time_bitmap) {
+		wpa_printf(MSG_INFO,
+			   "NAN: Missing time bitmap for map_id %d freq %d",
+			   map_id + 1, chan->freq);
+		return -1;
+	}
+
+	bitmap_len = wpabuf_len(chan->time_bitmap);
+	bitmap_data = wpabuf_head(chan->time_bitmap);
+	if (bitmap_len > NAN_TIME_BITMAP_MAX_LEN) {
+		wpa_printf(MSG_INFO,
+			   "NAN: Time bitmap length %zu exceeds maximum %d",
+			   bitmap_len, NAN_TIME_BITMAP_MAX_LEN);
+		return -1;
+	}
+
+	chan_sched = &sched->chans[sched->n_chans++];
+	chan_sched->map_id = map_id + 1;
+	chan_sched->chan.freq = chan->freq;
+	chan_sched->chan.center_freq1 = chan->center_freq1;
+	chan_sched->chan.center_freq2 = chan->center_freq2;
+	chan_sched->chan.bandwidth = chan->bandwidth;
+
+	chan_sched->committed.duration = wpa_s->nan_capa.slot_duration >> 5;
+	chan_sched->committed.period = ffs(wpa_s->nan_capa.schedule_period) - 7;
+	chan_sched->committed.offset = 0;
+	chan_sched->committed.len = bitmap_len;
+	os_memcpy(chan_sched->committed.bitmap, bitmap_data, bitmap_len);
+	wpa_printf(MSG_DEBUG,
+		   "NAN: NDP schedule channel added: map_id=%d freq=%d center_freq1=%d center_freq2=%d bandwidth=%d",
+		   chan_sched->map_id,
+		   chan_sched->chan.freq,
+		   chan_sched->chan.center_freq1,
+		   chan_sched->chan.center_freq2,
+		   chan_sched->chan.bandwidth);
+
+	return 0;
+}
+
+
 static void wpas_nan_fill_ndp_schedule(struct wpa_supplicant *wpa_s,
-				       struct nan_schedule *sched);
+				       struct nan_schedule *sched)
+{
+	int map_id;
+
+	os_memset(sched, 0, sizeof(*sched));
+
+	/* Fill the NAN schedule structure from the schedule config */
+	for (map_id = 0; map_id < MAX_NAN_RADIOS; map_id++) {
+		int i;
+		struct nan_schedule_config *sched_cfg =
+			&wpa_s->nan_sched[map_id];
+
+		for (i = 0; i < wpa_s->nan_sched[map_id].num_channels; i++) {
+			struct nan_schedule_channel *chan;
+
+			chan = &sched_cfg->channels[i];
+			if (wpas_nan_fill_ndp_schedule_chan(wpa_s, sched,
+							    map_id, chan)
+			    < 0)
+				return;
+		}
+	}
+
+	/* Mark all supported radios - for potential availability */
+	sched->map_ids_bitmap = (BIT(wpa_s->nan_capa.num_radios) - 1) << 1;
+}
+
+
+static void wpas_nan_update_local_schedule(struct wpa_supplicant *wpa_s)
+{
+	struct nan_schedule sched;
+
+	wpas_nan_fill_ndp_schedule(wpa_s, &sched);
+	nan_local_sched_update(wpa_s->nan, &sched);
+}
 
 
 /* Parse format NAN_SCHED_CONFIG_MAP map_id=<id> [freq:bitmap_hex]..
@@ -1945,10 +2029,15 @@ int wpas_nan_sched_config_map(struct wpa_supplicant *wpa_s, const char *cmd)
 
 	pos = os_strchr(cmd + 7, ' ');
 	if (!pos) {
-		clear_sched_config(&wpa_s->nan_sched[map_id - 1]);
 		wpa_printf(MSG_INFO,
 			   "NAN: Missing freq:timebitmap pairs - cleanup schedule");
-		return wpa_drv_nan_config_schedule(wpa_s, map_id, sched_cfg);
+		ret = wpa_drv_nan_config_schedule(wpa_s, map_id, sched_cfg);
+		if (!ret) {
+			clear_sched_config(&wpa_s->nan_sched[map_id - 1]);
+			wpas_nan_update_local_schedule(wpa_s);
+		}
+
+		return ret;
 	}
 
 	shared_freqs = os_calloc(wpa_s->num_multichan_concurrent,
@@ -2149,6 +2238,7 @@ int wpas_nan_sched_config_map(struct wpa_supplicant *wpa_s, const char *cmd)
 		os_memcpy(&wpa_s->nan_sched[map_id - 1], sched_cfg,
 			  sizeof(*sched_cfg));
 		os_memset(sched_cfg, 0, sizeof(*sched_cfg));
+		wpas_nan_update_local_schedule(wpa_s);
 	}
 out:
 	os_free(bf_total);
@@ -2198,85 +2288,6 @@ static struct wpabuf * wpas_nan_build_ndp_elems(struct wpa_supplicant *wpa_s)
 
 	/* TODO: Add HE capabilities */
 	return buf;
-}
-
-
-static int
-wpas_nan_fill_ndp_schedule_chan(struct wpa_supplicant *wpa_s,
-				struct nan_schedule *sched, int map_id,
-				const struct nan_schedule_channel *chan)
-{
-	struct nan_chan_schedule *chan_sched;
-	const u8 *bitmap_data;
-	size_t bitmap_len;
-
-	/* None of these should happen */
-	if (!chan->time_bitmap) {
-		wpa_printf(MSG_INFO,
-			   "NAN: Missing time bitmap for map_id %d freq %d",
-			   map_id + 1, chan->freq);
-		return -1;
-	}
-
-	bitmap_len = wpabuf_len(chan->time_bitmap);
-	bitmap_data = wpabuf_head(chan->time_bitmap);
-	if (bitmap_len > NAN_TIME_BITMAP_MAX_LEN) {
-		wpa_printf(MSG_INFO,
-			   "NAN: Time bitmap length %zu exceeds maximum %d",
-			   bitmap_len, NAN_TIME_BITMAP_MAX_LEN);
-		return -1;
-	}
-
-	chan_sched = &sched->chans[sched->n_chans++];
-	chan_sched->map_id = map_id + 1;
-	chan_sched->chan.freq = chan->freq;
-	chan_sched->chan.center_freq1 = chan->center_freq1;
-	chan_sched->chan.center_freq2 = chan->center_freq2;
-	chan_sched->chan.bandwidth = chan->bandwidth;
-
-	chan_sched->committed.duration = wpa_s->nan_capa.slot_duration >> 5;
-	chan_sched->committed.period = ffs(wpa_s->nan_capa.schedule_period) - 7;
-	chan_sched->committed.offset = 0;
-	chan_sched->committed.len = bitmap_len;
-	os_memcpy(chan_sched->committed.bitmap, bitmap_data, bitmap_len);
-	wpa_printf(MSG_DEBUG,
-		   "NAN: NDP schedule channel added: map_id=%d freq=%d center_freq1=%d center_freq2=%d bandwidth=%d",
-		   chan_sched->map_id,
-		   chan_sched->chan.freq,
-		   chan_sched->chan.center_freq1,
-		   chan_sched->chan.center_freq2,
-		   chan_sched->chan.bandwidth);
-
-	return 0;
-}
-
-
-static void wpas_nan_fill_ndp_schedule(struct wpa_supplicant *wpa_s,
-				       struct nan_schedule *sched)
-{
-	int map_id;
-
-	os_memset(sched, 0, sizeof(*sched));
-
-	/* Fill the NAN schedule structure from the schedule config */
-	for (map_id = 0; map_id < MAX_NAN_RADIOS; map_id++) {
-		int i;
-		struct nan_schedule_config *sched_cfg =
-			&wpa_s->nan_sched[map_id];
-
-		for (i = 0; i < wpa_s->nan_sched[map_id].num_channels; i++) {
-			struct nan_schedule_channel *chan;
-
-			chan = &sched_cfg->channels[i];
-			if (wpas_nan_fill_ndp_schedule_chan(wpa_s, sched,
-							    map_id, chan)
-			    < 0)
-				return;
-		}
-	}
-
-	/* Mark all supported radios - for potential availability */
-	sched->map_ids_bitmap = (BIT(wpa_s->nan_capa.num_radios) - 1) << 1;
 }
 
 
