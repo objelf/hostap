@@ -277,6 +277,7 @@ u16 nan_de_get_service_bootstrap_methods(struct nan_de *de, int handle);
 bool nan_de_service_supports_csid(struct nan_de *de, int handle, int csid);
 void nan_de_set_tx_mcast_fu_dual_prot(struct nan_de *de,
 				      bool tx_mcast_fu_dual_prot);
+int nan_de_get_status(struct nan_de *de, char *buf, size_t buflen);
 
 int nan_de_stop_listen(struct nan_de *de, int handle);
 

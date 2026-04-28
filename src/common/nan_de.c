@@ -2794,6 +2794,44 @@ bool nan_de_service_supports_csid(struct nan_de *de, int handle, int csid)
 	return int_array_includes(srv->cipher_suites_list, csid);
 }
 
+
+int nan_de_get_status(struct nan_de *de, char *buf, size_t buflen)
+{
+	char *pos, *end;
+	unsigned int i;
+
+	if (!de)
+		return -1;
+
+	pos = buf;
+	end = buf + buflen;
+
+	pos += os_snprintf(pos, end - pos, "num_services=%u\n",
+			   de->num_service);
+	if (pos >= end)
+		return pos - buf;
+
+	for (i = 0; i < NAN_DE_MAX_SERVICE; i++) {
+		struct nan_de_service *srv = de->service[i];
+
+		if (!srv)
+			continue;
+
+		pos += os_snprintf(pos, end - pos,
+				   "service=%u type=%s name=%s sync=%d\n",
+				   srv->id,
+				   srv->type == NAN_DE_PUBLISH ? "publish" :
+				   (srv->type == NAN_DE_SUBSCRIBE ? "subscribe" :
+				    "unknown"),
+				   srv->service_name ? srv->service_name : "",
+				   srv->sync);
+		if (pos >= end)
+			return pos - buf;
+	}
+
+	return pos - buf;
+}
+
 #ifdef CONFIG_TESTING_OPTIONS
 
 void nan_de_set_tx_mcast_fu_dual_prot(struct nan_de *de,
