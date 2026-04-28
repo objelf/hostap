@@ -3495,6 +3495,34 @@ void wpas_nan_ulw_update(struct wpa_supplicant *wpa_s,
 }
 
 
+void wpas_nan_chan_evacuation(struct wpa_supplicant *wpa_s,
+			      union wpa_event_data *data)
+{
+	size_t map_id, i;
+	int freq = data->nan_chan_evacuation_info.freq;
+
+	if (!wpas_nan_ready(wpa_s))
+		return;
+
+	wpa_printf(MSG_DEBUG,
+		   "NAN: Channel evacuation notification freq=%d",
+		   freq);
+
+	for (map_id = 0; map_id < MAX_NAN_RADIOS; map_id++) {
+		struct nan_schedule_config *sched =
+					&wpa_s->nan_sched[map_id];
+
+		for (i = 0; i < sched->num_channels; i++) {
+			if (sched->channels[i].freq != freq)
+				continue;
+
+			wpas_notify_nan_chan_evacuation(wpa_s, map_id, freq);
+			break;
+		}
+	}
+}
+
+
 #ifdef CONFIG_PASN
 
 static int wpas_nan_pasn_update_station(struct wpa_supplicant *wpa_s,
