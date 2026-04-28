@@ -449,6 +449,9 @@ struct nan_config {
 	 */
 	u16 bootstrap_comeback_timeout;
 
+	/* Security capabilities. See Table 122, capabilities field */
+	u8 security_capab;
+
 	/**
 	 * start - Start NAN
 	 * @ctx: Callback context from cb_ctx
