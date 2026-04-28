@@ -302,6 +302,8 @@ struct nan_elem_container_entry {
  * @pmk: PMK shared with the peer
  * @pmkid: PMKID shared with the peer
  * @ptk: PTK shared with the peer
+ * @pairing_akmp: AKMP used for the pairing (see See WPA_KEY_MGMT_*) or
+ * 	zero if PASN pairing was not used for NDP establishment.
  */
 struct nan_peer_sec_info_entry {
 	struct dl_list list;
@@ -313,6 +315,7 @@ struct nan_peer_sec_info_entry {
 	u8 pmk[PMK_LEN];
 	u8 pmkid[PMKID_LEN];
 	struct nan_ptk ptk;
+	int pairing_akmp;
 };
 
 /**
@@ -503,6 +506,7 @@ enum nan_pairing_role {
  * @flags: Bitmap of pairing flags. See NAN_PAIRING_FLAG_*
  * @pending_auth1: Pending PASN Authentication frame 1 to be processed
  * @pairing_csid: Cipher suite ID used for the pairing
+ * @pairing_akmp: AKMP used for the pairing. See WPA_KEY_MGMT_*.
  */
 struct nan_pairing_peer_data {
 	struct nan_pairing_cfg pairing_cfg;
@@ -516,6 +520,7 @@ struct nan_pairing_peer_data {
 	u32 flags;
 	struct wpabuf *pending_auth1;
 	enum nan_cipher_suite_id pairing_csid;
+	int pairing_akmp;
 };
 
 /**
