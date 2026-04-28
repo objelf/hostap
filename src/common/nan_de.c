@@ -130,6 +130,15 @@ struct nan_de {
 
 	/* RSSI threshold for close proximity, or zero if not limited */
 	int rssi_threshold;
+
+#ifdef CONFIG_TESTING_OPTIONS
+	/*
+	 * When set, multicast follow up SDFs would be sent as
+	 * Protected Dual of Public. This can be used to test protection
+	 * of NAN multicast management frames.
+	 */
+	bool tx_mcast_fu_dual_prot;
+#endif /* CONFIG_TESTING_OPTIONS */
 };
 
 
@@ -249,14 +258,26 @@ static void nan_de_unpause_state(struct nan_de_service *srv)
 	srv->sel_peer_id = 0;
 }
 
+
 static struct wpabuf * nan_de_alloc_sdf(struct nan_de *de, const u8 *dst,
-					size_t len)
+				        size_t len,
+				        enum nan_service_control_type type)
 {
 	struct wpabuf *buf;
 	u8 category = WLAN_ACTION_PUBLIC;
 
 	if (de->cb.is_peer_paired && de->cb.is_peer_paired(de->cb.ctx, dst))
 		category = WLAN_ACTION_PROTECTED_DUAL;
+
+#ifdef CONFIG_TESTING_OPTIONS
+	if (de->tx_mcast_fu_dual_prot &&
+	    is_multicast_ether_addr(dst) &&
+	    type == NAN_SRV_CTRL_FOLLOW_UP) {
+		wpa_printf(MSG_DEBUG,
+			   "NAN: Send multicast followup as protected DUAL");
+		category = WLAN_ACTION_PROTECTED_DUAL;
+	}
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	buf = wpabuf_alloc(2 + 4 + len);
 	if (buf) {
@@ -378,7 +399,7 @@ static void nan_de_tx_sdf(struct nan_de *de, struct nan_de_service *srv,
 			list_len * (sizeof(struct nan_sec_ctxt) + PMKID_LEN);
 	}
 
-	buf = nan_de_alloc_sdf(de, dst, len);
+	buf = nan_de_alloc_sdf(de, dst, len, type);
 	if (!buf)
 		return;
 
@@ -2623,3 +2644,18 @@ bool nan_de_service_supports_csid(struct nan_de *de, int handle, int csid)
 	/* Check if the CSID is in the service's cipher suite list */
 	return int_array_includes(srv->cipher_suites_list, csid);
 }
+
+#ifdef CONFIG_TESTING_OPTIONS
+
+void nan_de_set_tx_mcast_fu_dual_prot(struct nan_de *de,
+				      bool tx_mcast_fu_dual_prot)
+{
+	wpa_printf(MSG_DEBUG,
+		   "NAN: Set tx_mcast_follow_up_dual_prot: %u->%u",
+		   de->tx_mcast_fu_dual_prot,
+		   tx_mcast_fu_dual_prot);
+
+	de->tx_mcast_fu_dual_prot = tx_mcast_fu_dual_prot;
+}
+
+#endif /* CONFIG_TESTING_OPTIONS */
