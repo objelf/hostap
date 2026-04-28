@@ -2490,6 +2490,29 @@ fail:
 }
 
 
+int wpas_nan_ndp_response_set_gtk(struct wpa_supplicant *wpa_s,
+				  struct wpa_supplicant *ndi_wpa_s,
+				  int handle, struct nan_ndp_params *ndp)
+{
+	int gtk_csid;
+
+	gtk_csid = nan_ndp_requested_gtk_csid(wpa_s->nan, &ndp->ndp_id);
+	if (!gtk_csid) {
+		wpa_printf(MSG_DEBUG, "NAN: No GTK requested by peer for NDP");
+		return 0;
+	}
+
+	if (!nan_de_service_supports_csid(wpa_s->nan_de, handle, gtk_csid)) {
+		wpa_printf(MSG_DEBUG,
+			   "NAN: Cannot set GTK - CSID %d not supported by service",
+			   gtk_csid);
+		return -1;
+	}
+
+	return wpas_nan_set_gtk(ndi_wpa_s, ndp, gtk_csid);
+}
+
+
 /* Command format NAN_NDP_RESPONSE accept|reject peer_nmi=<nmi>
    [reason_code=<reject_reason>]
    [ndi=<ifname> handle=<service_handle> init_ndi=<ndi>
@@ -2504,6 +2527,7 @@ int wpas_nan_ndp_response(struct wpa_supplicant *wpa_s, char *cmd)
 	const char *pwd = NULL, *pmk = NULL;
 	int handle = -1;
 	int ret = -1;
+	struct wpa_supplicant *ndi_wpa_s = NULL;
 
 	if (!wpas_nan_ndp_allowed(wpa_s))
 		return -1;
@@ -2544,8 +2568,6 @@ int wpas_nan_ndp_response(struct wpa_supplicant *wpa_s, char *cmd)
 		if (os_strcmp(token, "reason_code") == 0) {
 			ndp.u.resp.reason_code = atoi(pos);
 		} else if (os_strcmp(token, "ndi") == 0) {
-			struct wpa_supplicant *ndi_wpa_s;
-
 			ndi_wpa_s = wpa_supplicant_get_iface(wpa_s->global,
 							     pos);
 			if (!ndi_wpa_s) {
@@ -2679,6 +2701,13 @@ int wpas_nan_ndp_response(struct wpa_supplicant *wpa_s, char *cmd)
 	if (!ndp.ndp_id.id) {
 		wpa_printf(MSG_INFO,
 			   "NAN: Missing required parameter: ndp_id");
+		goto fail;
+	}
+
+	if (ndp.u.resp.status == NAN_NDP_STATUS_ACCEPTED &&
+	    wpas_nan_ndp_response_set_gtk(wpa_s, ndi_wpa_s, handle, &ndp) < 0) {
+		wpa_printf(MSG_DEBUG,
+			   "NAN: Failed to set GTK for NDP response");
 		goto fail;
 	}
 
