@@ -2822,8 +2822,21 @@ int wpas_nan_ndp_request(struct wpa_supplicant *wpa_s, char *cmd)
 
 	os_memset(&ndp, 0, sizeof(ndp));
 
-	if (!wpas_nan_ndp_allowed(wpa_s))
+	wpa_printf(MSG_INFO,
+		   "NAN: NDP request enter ifname=%s cmd='%s'",
+		   wpa_s->ifname, cmd);
+	wpa_printf(MSG_INFO,
+		   "NAN: NDP allowed check ifname=%s nan_mgmt=%d nan=%p nan_de=%p state=%d drv_flags=0x%llx need_ndp=0x%llx",
+		   wpa_s->ifname, wpa_s->nan_mgmt, wpa_s->nan, wpa_s->nan_de,
+		   wpa_s->wpa_state,
+		   (unsigned long long) wpa_s->nan_capa.drv_flags,
+		   (unsigned long long) WPA_DRIVER_FLAGS_NAN_SUPPORT_NDP);
+	if (!wpas_nan_ndp_allowed(wpa_s)) {
+		wpa_printf(MSG_INFO,
+			   "NAN: NDP request rejected: NDP not allowed on %s",
+			   wpa_s->ifname);
 		return -1;
+	}
 
 	ndp.type = NAN_NDP_ACTION_REQ;
 	ndp.qos.min_slots = NAN_QOS_MIN_SLOTS_NO_PREF;
@@ -2841,6 +2854,7 @@ int wpas_nan_ndp_request(struct wpa_supplicant *wpa_s, char *cmd)
 		*pos++ = '\0';
 
 		if (os_strcmp(token, "handle") == 0) {
+			wpa_printf(MSG_INFO, "NAN: NDP request parse handle=%s", pos);
 			handle = atoi(pos);
 
 			/* Get service ID from the local handle */
@@ -2854,6 +2868,7 @@ int wpas_nan_ndp_request(struct wpa_supplicant *wpa_s, char *cmd)
 				goto fail;
 			}
 		} else if (os_strcmp(token, "ndi") == 0) {
+			wpa_printf(MSG_INFO, "NAN: NDP request parse ndi=%s", pos);
 			ndi_wpa_s = wpa_supplicant_get_iface(wpa_s->global,
 							     pos);
 			if (!ndi_wpa_s) {
@@ -2872,7 +2887,10 @@ int wpas_nan_ndp_request(struct wpa_supplicant *wpa_s, char *cmd)
 
 			os_memcpy(ndp.ndp_id.init_ndi, ndi_wpa_s->own_addr,
 				  ETH_ALEN);
+			wpa_printf(MSG_INFO, "NAN: NDP request local init_ndi=" MACSTR,
+				   MAC2STR(ndp.ndp_id.init_ndi));
 		} else if (os_strcmp(token, "peer_nmi") == 0) {
+			wpa_printf(MSG_INFO, "NAN: NDP request parse peer_nmi=%s", pos);
 			if (hwaddr_aton(pos, ndp.ndp_id.peer_nmi) < 0) {
 				wpa_printf(MSG_INFO,
 					   "NAN: Invalid peer NMI address: %s",
@@ -2881,6 +2899,7 @@ int wpas_nan_ndp_request(struct wpa_supplicant *wpa_s, char *cmd)
 			}
 
 		} else if (os_strcmp(token, "peer_id") == 0) {
+			wpa_printf(MSG_INFO, "NAN: NDP request parse peer_id=%s", pos);
 			ndp.u.req.publish_inst_id = atoi(pos);
 		} else if (os_strcmp(token, "ssi") == 0) {
 			ssi_buf = wpabuf_parse_bin(pos);
@@ -2960,6 +2979,12 @@ int wpas_nan_ndp_request(struct wpa_supplicant *wpa_s, char *cmd)
 		goto fail;
 	}
 
+	wpa_printf(MSG_INFO,
+		   "NAN: NDP request parsed handle=%d publish_inst_id=%u peer_nmi=" MACSTR " init_ndi=" MACSTR,
+		   handle, ndp.u.req.publish_inst_id,
+		   MAC2STR(ndp.ndp_id.peer_nmi),
+		   MAC2STR(ndp.ndp_id.init_ndi));
+
 	if ((pmk && pwd) || (pmk && pwd_hex) || (pwd && pwd_hex)) {
 		wpa_printf(MSG_INFO,
 			   "NAN: Specify only one of password, pwd_hex or pmk");
@@ -2975,14 +3000,16 @@ int wpas_nan_ndp_request(struct wpa_supplicant *wpa_s, char *cmd)
 	if (wpas_nan_fill_nd_pmk(wpa_s, &ndp, handle, ndp.ndp_id.peer_nmi,
 				 pwd_decoded ? pwd_decoded : pwd, pmk) < 0) {
 		wpa_printf(MSG_INFO,
-			   "NAN: Failed to derive NDP PMK");
+			   "NAN: NDP request failed: failed to derive NDP PMK");
 		goto fail;
 	}
 
 	if (wpas_nan_set_ndp_schedule(wpa_s, &ndp)) {
-		wpa_printf(MSG_INFO, "NAN: Failed to set NDP schedule");
+		wpa_printf(MSG_INFO,
+			   "NAN: NDP request failed: failed to set NDP schedule");
 		goto fail;
 	}
+	wpa_printf(MSG_INFO, "NAN: NDP request schedule step OK");
 
 	if (gtk_csid) {
 		if (ndp.sec.csid == NAN_CS_NONE) {
@@ -3000,8 +3027,14 @@ int wpas_nan_ndp_request(struct wpa_supplicant *wpa_s, char *cmd)
 	wpa_printf(MSG_DEBUG, "NAN: Requesting NDP with peer " MACSTR
 		   " using handle %d", MAC2STR(ndp.ndp_id.peer_nmi),
 		   ndp.u.req.publish_inst_id);
+	wpa_printf(MSG_INFO,
+		   "NAN: NDP request call nan_handle_ndp_setup peer_nmi=" MACSTR " publish_inst_id=%u",
+		   MAC2STR(ndp.ndp_id.peer_nmi), ndp.u.req.publish_inst_id);
 	ret = nan_handle_ndp_setup(wpa_s->nan, &ndp);
+	wpa_printf(MSG_INFO, "NAN: NDP request nan_handle_ndp_setup ret=%d", ret);
 fail:
+	if (ret < 0)
+		wpa_printf(MSG_INFO, "NAN: NDP request exit failure ret=%d", ret);
 	wpabuf_free(ndp.sched.elems);
 	wpabuf_free(ssi_buf);
 	os_free(ndp.interface_id);
@@ -3091,6 +3124,7 @@ int wpas_nan_ndp_response(struct wpa_supplicant *wpa_s, char *cmd)
 		if (os_strcmp(token, "reason_code") == 0) {
 			ndp.u.resp.reason_code = atoi(pos);
 		} else if (os_strcmp(token, "ndi") == 0) {
+			wpa_printf(MSG_INFO, "NAN: NDP request parse ndi=%s", pos);
 			ndi_wpa_s = wpa_supplicant_get_iface(wpa_s->global,
 							     pos);
 			if (!ndi_wpa_s) {
@@ -3110,6 +3144,7 @@ int wpas_nan_ndp_response(struct wpa_supplicant *wpa_s, char *cmd)
 			os_memcpy(ndp.u.resp.resp_ndi, ndi_wpa_s->own_addr,
 				  ETH_ALEN);
 		} else if (os_strcmp(token, "peer_nmi") == 0) {
+			wpa_printf(MSG_INFO, "NAN: NDP request parse peer_nmi=%s", pos);
 			if (hwaddr_aton(pos, ndp.ndp_id.peer_nmi) < 0) {
 				wpa_printf(MSG_INFO,
 					   "NAN: Invalid peer NMI address: %s",

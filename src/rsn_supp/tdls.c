@@ -2969,6 +2969,23 @@ static void wpa_supplicant_rx_tdls(void *ctx, const u8 *src_addr,
 		wpa_tdls_process_tpk_m1(sm, src_addr, buf, len);
 		break;
 	case WLAN_TDLS_SETUP_RESPONSE:
+		if (len >= 6) {
+			u16 status = WPA_GET_LE16(buf + 3);
+			u8 dialog_token = buf[5];
+
+			wpa_printf(MSG_INFO,
+				   "TDLS_DEBUG_RX_M2: src=" MACSTR
+				   " len=%zu status=%u dialog_token=%u",
+				   MAC2STR(src_addr), len, status, dialog_token);
+			wpa_hexdump(MSG_INFO, "TDLS_DEBUG_RX_M2 payload", buf, len);
+		} else {
+			wpa_printf(MSG_INFO,
+				   "TDLS_DEBUG_RX_M2: src=" MACSTR
+				   " too short len=%zu",
+				   MAC2STR(src_addr), len);
+			wpa_hexdump(MSG_INFO, "TDLS_DEBUG_RX_M2 short payload", buf, len);
+		}
+
 		wpa_tdls_process_tpk_m2(sm, src_addr, buf, len);
 		break;
 	case WLAN_TDLS_SETUP_CONFIRM:

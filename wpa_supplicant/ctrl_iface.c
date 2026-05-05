@@ -14496,8 +14496,15 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
 		if (wpas_nan_sched_config_map(wpa_s, buf + 21) < 0)
 			reply_len = -1;
 	} else if (os_strncmp(buf, "NAN_NDP_REQUEST ", 16) == 0) {
-		if (wpas_nan_ndp_request(wpa_s, buf + 16) < 0)
+		wpa_printf(MSG_INFO,
+			   "NAN: CTRL NAN_NDP_REQUEST ifname=%s cmd='%s'",
+			   wpa_s->ifname, buf + 16);
+		if (wpas_nan_ndp_request(wpa_s, buf + 16) < 0) {
+			wpa_printf(MSG_INFO,
+				   "NAN: CTRL NAN_NDP_REQUEST failed ifname=%s",
+				   wpa_s->ifname);
 			reply_len = -1;
+		}
 	} else if (os_strncmp(buf, "NAN_NDP_RESPONSE ", 17) == 0) {
 		if (wpas_nan_ndp_response(wpa_s, buf + 17) < 0)
 			reply_len = -1;
