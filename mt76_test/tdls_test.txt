@@ -1,0 +1,14 @@
+sudo pkill hostapd
+
+sudo ~/dev/hostap/hostapd/hostapd \
+  -dd ~/dev/hostap/mt76_test/hostapd_wpa3_5g_he80_ch149_tdls.conf
+
+sudo ~/dev/hostap/hostapd/hostapd_cli \
+  -p /var/run/hostapd \
+  -i wlx000c43baabd4 
+
+sudo ~/dev/hostap/wpa_supplicant/wpa_supplicant \
+  -i wlp1s0 \
+  -c ~/dev/hostap/mt76_test/wpa_supplicant_wpa3_5g_he80_ch149_tdls.conf \
+  -D nl80211 \
+  -dd
