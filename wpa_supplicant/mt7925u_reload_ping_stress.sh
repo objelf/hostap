@@ -7,9 +7,9 @@ AP_IP="192.168.1.254"
 MODULE="mt7925u"
 
 TIMEOUT=20
-PING_TASKS=50
+PING_TASKS=20
 PING_INTERVAL="0.01"
-TEST_ROUNDS=1
+TEST_ROUNDS=10000
 
 log()
 {
@@ -144,11 +144,22 @@ start_ping_tasks()
 check_parallel_ping_ok()
 {
 	local t=0
+	local ok_count=0
 
-	log "checking if parallel ping tasks receive replies"
+	log "checking if all parallel ping tasks receive replies"
 
 	while [ "$t" -lt "$TIMEOUT" ]; do
-		if grep -q "bytes from $AP_IP" /tmp/ping_task_*.log 2>/dev/null; then
+		ok_count=0
+
+		for i in $(seq 1 "$PING_TASKS"); do
+			if grep -q "bytes from $AP_IP" /tmp/ping_task_${i}.log 2>/dev/null; then
+				ok_count=$((ok_count + 1))
+			fi
+		done
+
+		log "parallel ping reply count: $ok_count/$PING_TASKS"
+
+		if [ "$ok_count" -eq "$PING_TASKS" ]; then
 			log "parallel ping check OK"
 			return 0
 		fi
@@ -157,10 +168,8 @@ check_parallel_ping_ok()
 		t=$((t + 1))
 	done
 
-	log "parallel ping logs:"
 	tail -n 20 /tmp/ping_task_*.log 2>/dev/null || true
-
-	die "parallel ping did not receive reply after ${TIMEOUT}s"
+	die "only $ok_count/$PING_TASKS ping tasks received replies after ${TIMEOUT}s"
 }
 
 kill_ping_tasks()
