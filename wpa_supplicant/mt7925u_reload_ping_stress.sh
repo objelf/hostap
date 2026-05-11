@@ -7,7 +7,7 @@ AP_IP="192.168.1.254"
 MODULE="mt7925u"
 
 TIMEOUT=20
-PING_TASKS=20
+PING_TASKS=50
 PING_INTERVAL="0.01"
 TEST_ROUNDS=10000
 
@@ -212,10 +212,16 @@ one_round()
 
 	start_ping_tasks
 	check_parallel_ping_ok
+
+	log "removing module while parallel ping stress is still running"
+	sudo modprobe -r "$MODULE" || die "failed to unload $MODULE during ping stress"
+
+	log "module removed under ping stress, now kill ping tasks"
 	kill_ping_tasks
 
-	log "reload modules again after ping stress"
-	reload_module
+	log "loading module again after stress removal"
+	sudo modprobe "$MODULE" || die "failed to load $MODULE after stress removal"
+	wait_for_iface
 
 	log "========== round $round done =========="
 }
