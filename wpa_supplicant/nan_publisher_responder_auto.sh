@@ -183,8 +183,7 @@ create_nan_if()
 	run_global interface_add "$NAN_IF" "" nl80211 "$CTRL_DIR" "" "" create nan "$NAN_MAC" ||
 		die "failed to create $NAN_IF"
 
-	# NAN DEVICE may not appear as a Linux netdev and this hostap build may not
-	# create /run/wpa_supplicant/$NAN_IF. Use global ctrl + IFNAME=$NAN_IF.
+	# NAN DEVICE is controlled through global ctrl + IFNAME=$NAN_IF.
 	sleep 0.5
 }
 
@@ -348,8 +347,8 @@ main()
 	prepare_base_if
 	start_wpas
 	create_nan_if
-	create_ndi_if
 	configure_nan
+	create_ndi_if
 	publish_service
 	start_event_responder
 }
