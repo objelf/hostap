@@ -187,16 +187,51 @@ create_nan_if()
 	sleep 0.5
 }
 
+
+wait_for_cluster_join()
+{
+	local timeout="${1:-30}"
+	local start now out cid
+
+	echo "[INFO] waiting for NAN cluster join, timeout=${timeout}s"
+	start="$(date +%s)"
+
+	while true; do
+		out="$(run_nan nan_status 2>/dev/null || true)"
+		echo "$out"
+
+		cid="$(echo "$out" | awk -F= '/^cluster_id=/ {print $2; exit}')"
+
+		if [ -n "$cid" ] && [ "$cid" != "00:00:00:00:00:00" ]; then
+			echo "[OK] NAN cluster joined: cluster_id=$cid"
+			return 0
+		fi
+
+		now="$(date +%s)"
+		if [ "$((now - start))" -ge "$timeout" ]; then
+			echo "[ERR] NAN cluster did not join within ${timeout}s"
+			echo "[INFO] tail wpa_supplicant log:"
+			grep -iE "NAN|cluster|nan_start|nan_set|nan_publish|nan_subscribe|failed|FAIL" "$WPAS_LOG" | tail -200 || true
+			return 1
+		fi
+
+		sleep 0.5
+	done
+}
+
+
 configure_nan()
 {
-	echo "[INFO] starting NAN"
+	echo "[INFO] setting cluster id before NAN start: $CLUSTER_ID"
+	run_nan nan_set cluster_id "$CLUSTER_ID" ||
+		die "nan_set cluster_id failed"
 
+	echo "[INFO] starting NAN"
 	run_nan nan_start ||
 		die "nan_start failed"
 
-	echo "[INFO] setting cluster id: $CLUSTER_ID"
-	run_nan nan_set cluster_id "$CLUSTER_ID" ||
-		die "nan_set cluster_id failed"
+	wait_for_cluster_join 30 ||
+		die "NAN cluster join failed"
 
 	echo "[INFO] setting schedule map: $SCHED_MAP"
 	run_nan nan_sched_config_map $SCHED_MAP ||
@@ -209,6 +244,7 @@ configure_nan()
 	echo "[INFO] NAN status"
 	run_nan nan_status || true
 }
+
 
 subscribe_service()
 {
@@ -254,6 +290,10 @@ create_ndi_if()
 	wait_for_iface "$NDI_IF"
 	NDI_CREATED=1
 
+	echo "[INFO] bring $NDI_IF up"
+	sudo ip link set "$NDI_IF" up || true
+	ip link show "$NDI_IF" || true
+
 	if [ -S "$CTRL_DIR/$NDI_IF" ]; then
 		echo "[OK] $NDI_IF control is ready: $CTRL_DIR/$NDI_IF"
 	else
@@ -293,7 +333,7 @@ start_event_initiator()
 
 	sudo "$WPA_CLI" -g "$GLOBAL_CTRL" | tee "$EVENT_LOG" | \
 	while IFS= read -r line; do
-		echo "[EVT] $line"
+		echo "[$(date '+%F %T.%3N')] [EVT] $line"
 
 		case "$line" in
 		*NAN-DISCOVERY-RESULT*)
