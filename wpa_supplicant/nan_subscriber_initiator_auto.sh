@@ -313,8 +313,6 @@ send_ndp_request()
 	echo "       peer_nmi=$peer_nmi"
 	echo "       ndi=$NDI_IF"
 
-	create_ndi_if
-
 	run_nan nan_ndp_request \
 		handle="$subscribe_id" \
 		ndi="$NDI_IF" \
@@ -351,7 +349,6 @@ start_event_initiator()
 			key="${subscribe_id}_${publish_id}_${peer_nmi}"
 
 			if [ "${requested[$key]+yes}" = "yes" ]; then
-				echo "[INFO] already sent NDP request for $key"
 				continue
 			fi
 
@@ -410,6 +407,7 @@ main()
 	create_nan_if
 	configure_nan
 	subscribe_service
+	create_ndi_if
 	start_event_initiator
 }
 
