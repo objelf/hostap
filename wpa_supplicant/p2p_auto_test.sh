@@ -25,7 +25,8 @@ SOCIAL_FIND_TIME=8
 LISTEN_TIME=30
 CONNECT_WAIT=25
 DISCOVERY_ROUNDS=${DISCOVERY_ROUNDS:-10}
-DISCOVERY_WAIT=${DISCOVERY_WAIT:-5}
+DISCOVERY_WAIT=${DISCOVERY_WAIT:-10}
+P2P_LISTEN_CHANNEL=${P2P_LISTEN_CHANNEL:-6}
 
 echo "============================================================"
 echo "[INFO] P2P auto test"
@@ -203,6 +204,9 @@ serial_number=1
 device_type=1-0050F204-1
 config_methods=virtual_push_button
 p2p_disabled=0
+country=US
+p2p_listen_reg_class=81
+p2p_listen_channel=$P2P_LISTEN_CHANNEL
 EOF
 
 sudo tee "$PEER_CONF" >/dev/null <<EOF
@@ -216,6 +220,9 @@ serial_number=1
 device_type=1-0050F204-1
 config_methods=virtual_push_button
 p2p_disabled=0
+country=US
+p2p_listen_reg_class=81
+p2p_listen_channel=$P2P_LISTEN_CHANNEL
 EOF
 
 sudo rm -f "$DUT_LOG" "$PEER_LOG"
@@ -278,6 +285,9 @@ DUT_SEES_PEER=""
 PEER_SEES_DUT=""
 
 for round in $(seq 1 "$DISCOVERY_ROUNDS"); do
+    DUT_SEES_PEER=""
+    PEER_SEES_DUT=""
+
     echo
     echo "------------------------------------------------------------"
     echo "[ROUND $round/$DISCOVERY_ROUNDS] PEER listen, DUT find"
@@ -357,6 +367,9 @@ if [ -z "$DUT_SEES_PEER" ] || [ -z "$PEER_SEES_DUT" ]; then
     echo
     echo "[WARN] Bidirectional discovery not complete after $DISCOVERY_ROUNDS rounds"
     echo "[WARN] Skip connect to avoid connecting to unrelated P2P devices"
+    SKIP_CONNECT=1
+else
+    SKIP_CONNECT=0
 fi
 
 echo
@@ -365,7 +378,9 @@ echo "[CONNECT] Try PBC GO negotiation"
 echo "============================================================"
 
 # Prefer DUT as GO if it saw peer.
-if [ -n "${DUT_SEES_PEER:-}" ] && [[ "$DUT_SEES_PEER" =~ ^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$ ]]; then
+if [ "${SKIP_CONNECT:-0}" -eq 0 ] &&
+    [ -n "${DUT_SEES_PEER:-}" ] &&
+    [[ "$DUT_SEES_PEER" =~ ^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$ ]]; then
     TARGET="$DUT_SEES_PEER"
     echo "[INFO] DUT will connect to PEER=$TARGET with go_intent=15"
 
