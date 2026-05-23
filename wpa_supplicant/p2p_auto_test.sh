@@ -27,6 +27,7 @@ CONNECT_WAIT=25
 DISCOVERY_ROUNDS=${DISCOVERY_ROUNDS:-10}
 DISCOVERY_WAIT=${DISCOVERY_WAIT:-10}
 P2P_LISTEN_CHANNEL=${P2P_LISTEN_CHANNEL:-6}
+REQUIRE_BIDIR_DISCOVERY=${REQUIRE_BIDIR_DISCOVERY:-0}
 
 echo "============================================================"
 echo "[INFO] P2P auto test"
@@ -94,9 +95,22 @@ get_target_peer()
     local ctrl="$1"
     local ifname="$2"
     local target="$3"
+    local peer
 
-    sudo "$WPA_CLI" -p "$ctrl" -i "$ifname" p2p_peers 2>/dev/null | \
+    peer=$(sudo "$WPA_CLI" -p "$ctrl" -i "$ifname" p2p_peers 2>/dev/null | \
         awk -v t="$target" 'tolower($1) == tolower(t) { print $1; exit }'
+    )
+    if [ -n "$peer" ]; then
+        echo "$peer"
+        return 0
+    fi
+
+    if sudo "$WPA_CLI" -p "$ctrl" -i "$ifname" p2p_peer "$target" 2>/dev/null | \
+        awk -v t="$target" 'NR == 1 && tolower($1) == tolower(t) { found = 1 }
+                            END { exit found ? 0 : 1 }'; then
+        echo "$target"
+        return 0
+    fi
 }
 
 print_peer_detail()
@@ -363,12 +377,17 @@ for round in $(seq 1 "$DISCOVERY_ROUNDS"); do
     echo "       PEER_SEES_DUT=${PEER_SEES_DUT:-no}"
 done
 
-if [ -z "$DUT_SEES_PEER" ] || [ -z "$PEER_SEES_DUT" ]; then
+if [ -z "$DUT_SEES_PEER" ] ||
+    { [ "$REQUIRE_BIDIR_DISCOVERY" -ne 0 ] && [ -z "$PEER_SEES_DUT" ]; }; then
     echo
-    echo "[WARN] Bidirectional discovery not complete after $DISCOVERY_ROUNDS rounds"
+    echo "[WARN] Required discovery not complete after $DISCOVERY_ROUNDS rounds"
     echo "[WARN] Skip connect to avoid connecting to unrelated P2P devices"
     SKIP_CONNECT=1
 else
+    if [ -z "$PEER_SEES_DUT" ]; then
+        echo
+        echo "[WARN] PEER did not discover DUT; try DUT-initiated connect anyway"
+    fi
     SKIP_CONNECT=0
 fi
 
